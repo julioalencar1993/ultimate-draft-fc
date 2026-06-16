@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Draft Histórico v26</title>
+<title>Draft Histórico v28</title>
 <style>
 :root{--bg:#06101d;--panel:#111b2b;--gold:#d8b44f;--txt:#f4f7fb;--mut:#a8b4c7;--green:#6bd15b;--blue:#4aa3ff;--red:#ff5d5d;--yellow:#f4c441;--line:rgba(255,255,255,.13)}
 *{box-sizing:border-box}
@@ -1326,7 +1326,7 @@ table{width:100%;border-collapse:collapse} th,td{padding:9px;border-bottom:1px s
 </head>
 <body>
 <div class="wrap">
-  <div class="header"><div class="logo"><div class="badge">DH</div><div><h1>Draft Histórico v26</h1><div class="sub">Base real expandida • 2500 cartas • MAT + SA versátil</div></div></div><button class="secondary" onclick="location.reload()">Novo jogo</button></div>
+  <div class="header"><div class="logo"><div class="badge">DH</div><div><h1>Draft Histórico v27</h1><div class="sub">Base real expandida • 2500 cartas • MAT + SA versátil</div></div></div><button class="secondary" onclick="location.reload()">Novo jogo</button></div>
 
   <section id="setup" class="screen active">
     <div class="startHero">
@@ -3115,11 +3115,22 @@ function positionPercent(p,assignedPos){
  if(sector(natural)==="MID" && sector(assigned)==="ATT") return .78;
  return .60;
 }
-function positionPenalty(p,assignedPos){const base=p.ovr||70;return Math.max(0,Math.round(base-(base*positionPercent(p,assignedPos))))}
-function effectiveOvrAt(p,assignedPos){return Math.max(40,Math.round((p.ovr||70)*positionPercent(p,assignedPos)))}
+function fitStarsInfo(p,assignedPos){
+ const natural=normPos(p.pos), assigned=normPos(assignedPos);
+ if(!assignedPos||assignedPos==="RES") return {stars:5,loss:0,label:"Reserva",html:"★★★★★"};
+ if(natural===assigned) return {stars:5,loss:0,label:"Natural",html:"★★★★★"};
+ const pct=positionPercent(p,assignedPos);
+ if(pct>=.95) return {stars:5,loss:2,label:"Adaptado",html:"★★★★★"};
+ if(pct>=.90) return {stars:4,loss:5,label:"Adaptado",html:"★★★★☆"};
+ if(pct>=.80) return {stars:3,loss:8,label:"Improvisado",html:"★★★☆☆"};
+ if(pct>=.60) return {stars:2,loss:20,label:"Fora de posição",html:"★★☆☆☆"};
+ return {stars:1,loss:30,label:"Muito fora",html:"★☆☆☆☆"};
+}
+function positionPenalty(p,assignedPos){return fitStarsInfo(p,assignedPos).loss}
+function effectiveOvrAt(p,assignedPos){return Math.max(40,(p.ovr||70)-positionPenalty(p,assignedPos))}
 function effectiveOvr(p){return effectiveOvrAt(p,p.assignedPos)}
-function fitClass(p){const pct=positionPercent(p,p.assignedPos);return pct>=.99?"goodFit":pct>=.90?"okFit":"badFit"}
-function fitText(p,assigned){const pct=Math.round(positionPercent(p,assigned)*100);if(pct>=99)return`Encaixe ${pct}%`;if(pct>=90)return`Adaptado ${pct}%`;if(pct>=80)return`Improviso ${pct}%`;return`Fora de posição ${pct}%`}
+function fitClass(p){const info=fitStarsInfo(p,p.assignedPos);return info.stars>=5?"goodFit":info.stars>=4?"okFit":"badFit"}
+function fitText(p,assigned){const info=fitStarsInfo(p,assigned);return `${info.label} ${info.html} ${info.loss?`-${info.loss} OVR`:"sem perda"}`}
 function renderOptions(team){
  const box=document.getElementById("pickOptions");box.innerHTML="";selectedPick=null;document.getElementById("chosenName").textContent="nenhum";document.getElementById("confirmBox").style.display="flex";
  if(!currentOptions.length){box.innerHTML=`<div class="card" style="grid-column:1/-1;text-align:center"><h2>Banco esgotado</h2><button onclick="finishDraft()">Revelar draft</button></div>`;return}
@@ -3138,7 +3149,20 @@ function openPositionModal(team,p){
  document.getElementById("modalPlayerName").textContent=`${p.name} ${p.year} - ${p.club} - ${p.pos}`;
  const box=document.getElementById("positionChoices");box.innerHTML="";const slots=getOpenFormationSlots(team);
  const sorted=[...slots].sort((a,b)=>positionPenalty(p,a.pos)-positionPenalty(p,b.pos));
- sorted.forEach(s=>{let pen=positionPenalty(p,s.pos);let b=document.createElement("div");b.className="posChoice";b.innerHTML=`${s.pos}<div class="sub">${fitText(p,s.pos)}${pen?` • OVR efetivo ${effectiveOvrAt(p,s.pos)}`:""}</div>`;b.onclick=()=>choosePlayer(team,p,s.pos);box.appendChild(b)});
+ sorted.forEach(s=>{
+  let info=fitStarsInfo(p,s.pos);
+  let eff=effectiveOvrAt(p,s.pos);
+  let b=document.createElement("div");
+  b.className="posChoice";
+  b.innerHTML=`
+    <div style="font-size:18px;margin-bottom:8px">${s.pos}</div>
+    <div style="color:#f4c441;font-size:20px;letter-spacing:1px">${info.html}</div>
+    <div class="sub" style="margin-top:8px;color:${info.stars>=4?'#8cff7a':info.stars>=3?'#f4c441':'#ff8080'}">${info.label}</div>
+    <div style="margin-top:8px">${info.loss?`-${info.loss} OVR`:"Sem perda"}</div>
+    <div class="sub" style="margin-top:6px">OVR efetivo ${eff}</div>`;
+  b.onclick=()=>choosePlayer(team,p,s.pos);
+  box.appendChild(b)
+});
  document.getElementById("positionModal").style.display="flex";
 }
 function autoAssignBotPosition(team,p){let slots=getOpenFormationSlots(team);if(!slots.length)return"RES";return [...slots].sort((a,b)=>positionPenalty(p,a.pos)-positionPenalty(p,b.pos))[0].pos}
@@ -3282,5 +3306,38 @@ window.ULTIMATE_DRAFT_OPTIONS_PER_PICK = 10;
 window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
 
 </script>
+
+<style>
+#mpOverlay{position:fixed;inset:0;background:radial-gradient(circle at top,#152b42,#02050a 70%);z-index:9999;color:#f4f7fb;display:none;overflow:auto;padding:24px;font-family:Arial,Helvetica,sans-serif}#mpOverlay.show{display:block}.mpBox{max-width:1100px;margin:0 auto;background:rgba(9,15,25,.96);border:1px solid rgba(216,180,79,.35);border-radius:20px;padding:18px;box-shadow:0 25px 80px rgba(0,0,0,.5)}.mpGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mpBtn{cursor:pointer;background:linear-gradient(#e3c267,#aa7b22);color:#101010;border:0;border-radius:12px;font-weight:900;padding:12px}.mpBtn.secondary{background:#172538;color:#fff;border:1px solid rgba(255,255,255,.13)}.mpInput{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.13);padding:12px;background:#121d2c;color:#fff;margin:6px 0 10px}.mpTitle{color:#d8b44f}.mpSub{color:#a8b4c7}.mpCards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}.mpCard{background:#101a29;border:1px solid rgba(216,180,79,.5);border-radius:14px;padding:12px;text-align:center;cursor:pointer}.mpCard b{display:block;font-size:18px}.mpTable{width:100%;border-collapse:collapse}.mpTable th,.mpTable td{border-bottom:1px solid rgba(255,255,255,.12);padding:7px;text-align:left}.mpLog{height:180px;overflow:auto;background:#06101d;border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:10px}.mpScore{font-size:48px;font-weight:1000;color:#d8b44f;text-align:center;margin:18px}.mpPill{display:inline-block;background:#14243a;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 10px;margin:4px}.mpOnlineBtn{margin-top:14px;width:100%;background:linear-gradient(#7ee7ff,#2786a7)!important;color:#06101d!important}@media(max-width:900px){.mpGrid,.mpCards{grid-template-columns:1fr}}
+</style>
+<div id="mpOverlay">
+  <div class="mpBox">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v28: draft em turnos, todos veem as escolhas, bots escolhem em 2 segundos e rodadas simultâneas.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
+    <div id="mpHome" class="mpGrid" style="margin-top:18px">
+      <div class="mpBox"><h2>Criar sala</h2><input id="mpClubCreate" class="mpInput" placeholder="Nome do clube" value="Campo Grande FC"><input id="mpPassCreate" class="mpInput" placeholder="Senha da sala"><button class="mpBtn" onclick="MP.createRoom()">Criar sala</button></div>
+      <div class="mpBox"><h2>Entrar em sala</h2><input id="mpCodeJoin" class="mpInput" placeholder="Código de 8 dígitos"><input id="mpPassJoin" class="mpInput" placeholder="Senha"><input id="mpClubJoin" class="mpInput" placeholder="Nome do clube"><button class="mpBtn" onclick="MP.joinRoom()">Entrar</button></div>
+    </div>
+    <div id="mpLobby" style="display:none;margin-top:18px"><h2>Sala <span id="mpRoomCode" class="mpTitle"></span></h2><p class="mpSub">Compartilhe o código e a senha. O dono inicia o draft.</p><div id="mpPlayers"></div><button id="mpStartBtn" class="mpBtn" onclick="MP.startDraft()">Iniciar draft</button></div>
+    <div id="mpDraft" style="display:none;margin-top:18px"><h2 id="mpDraftTitle">Draft</h2><p id="mpDraftSub" class="mpSub"></p><div id="mpDraftTeams"></div><div id="mpOptions" class="mpCards"></div></div>
+    <div id="mpMatch" style="display:none;margin-top:18px"><h2 id="mpMatchTitle">Partida</h2><div id="mpClock" class="mpTitle" style="text-align:center;font-size:34px">0'</div><div id="mpScore" class="mpScore">0 x 0</div><div class="mpLog" id="mpMatchLog"></div></div>
+    <div id="mpStandings" style="display:none;margin-top:18px"><h2>Classificação</h2><p class="mpSub">Próxima rodada começa automaticamente em 10 segundos.</p><table id="mpStandingsTable" class="mpTable"></table></div>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+ let socket=null, roomCode=null, myId=null;
+ function by(id){return document.getElementById(id)}
+ function show(sec){['mpHome','mpLobby','mpDraft','mpMatch','mpStandings'].forEach(id=>by(id).style.display=id===sec?'block':'none')}
+ function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{by('mpDraftSub').textContent=d.club+' escolheu '+d.card.name+' ('+d.card.pos+')'; const opts=by('mpOptions'); if(opts) opts.innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>Escolha feita</h2><p class="mpSub">'+d.club+' escolheu <b>'+d.card.name+'</b> ('+d.card.pos+', '+d.card.year+')</p></div>';}); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
+ function renderRoom(r){ roomCode=r.code; by('mpRoomCode').textContent=r.code; by('mpPlayers').innerHTML=r.players.map((p,i)=>'<span class="mpPill">'+(i+1)+'. '+p.club+(p.id===r.hostId?' 👑':'')+'</span>').join(''); by('mpStartBtn').style.display=(myId===r.hostId && r.phase==='lobby')?'inline-block':'none'; if(r.phase==='lobby') show('mpLobby'); }
+ function renderDraft(d){show('mpDraft'); const isMe=d.teamId===myId; by('mpDraftTitle').textContent='Draft '+(d.index+1)+' / '+d.total; by('mpDraftSub').textContent='Vez de: '+d.club+(isMe?' — SUA VEZ':(d.human?' — aguardando esse player escolher':' — 🤖 bot escolhendo, aguarde 2s')); by('mpDraftTeams').innerHTML=d.teams.map(t=>'<span class="mpPill">'+t.club+': '+t.count+'/11</span>').join(''); if(isMe){ by('mpOptions').innerHTML=(d.options||[]).map(c=>'<div class="mpCard" onclick="MP.pick(\''+c.id+'\')"><b>'+c.name+'</b><div>'+c.pos+' • '+c.year+'</div><div>OVR '+c.ovr+'</div></div>').join(''); } else { by('mpOptions').innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>'+d.club+'</h2><p class="mpSub">'+(d.human?'Esse player está escolhendo agora.':'Bot escolhendo automaticamente em 2 segundos.')+'</p></div>'; } }
+ function renderMatch(m){ by('mpMatchTitle').textContent=m.home.club+' x '+m.away.club; by('mpScore').textContent=m.h+' x '+m.a; by('mpClock').textContent=m.minute+"'"; }
+ function renderStandings(d){ show('mpStandings'); by('mpStandingsTable').innerHTML='<tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'+d.standings.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s.club+(s.human?' 👤':' 🤖')+'</td><td>'+s.PTS+'</td><td>'+s.P+'</td><td>'+s.V+'</td><td>'+s.E+'</td><td>'+s.D+'</td><td>'+(s.GP-s.GC)+'</td></tr>').join(''); }
+ window.MP={ open(){ensureSocket();by('mpOverlay').classList.add('show');show('mpHome')}, close(){by('mpOverlay').classList.remove('show')}, createRoom(){ensureSocket().emit('mp:createRoom',{club:by('mpClubCreate').value,password:by('mpPassCreate').value})}, joinRoom(){roomCode=by('mpCodeJoin').value;ensureSocket().emit('mp:joinRoom',{code:roomCode,password:by('mpPassJoin').value,club:by('mpClubJoin').value})}, startDraft(){ensureSocket().emit('mp:startDraft',{code:roomCode})}, pick(id){ensureSocket().emit('mp:pick',{code:roomCode,cardId:id}); by('mpOptions').innerHTML='<p class="mpSub">Escolha enviada. Aguardando servidor...</p>'} };
+ window.addEventListener('load',()=>{ const btn=document.createElement('button'); btn.className='startButton mpOnlineBtn'; btn.textContent='Jogar entre amigos (Online)'; btn.onclick=()=>MP.open(); const panel=document.querySelector('.setupPanel'); if(panel) panel.appendChild(btn); });
+})();
+</script>
+
 </body>
 </html>

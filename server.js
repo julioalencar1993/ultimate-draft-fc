@@ -11,7 +11,7 @@ app.use(express.static(__dirname));
 app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'index.html')));
 
 const MAX_PLAYERS = 8;
-const TOTAL_TEAMS = 20;
+const TOTAL_TEAMS = 20; // campeonato continua com 20 times; sala aceita até 8 jogadores humanos
 const PICK_ROUNDS = 11;
 const BOT_PICK_DELAY_MS = 2000;
 const rooms = new Map();
@@ -33,7 +33,7 @@ function advanceDraft(room){ if(!room.draft) return;
  if(room.draft.index >= room.draft.order.length){ room.phase='readyRound'; emitRoom(room); io.to(room.code).emit('mp:draftDone', { teams:room.teams.map(t=>({id:t.id,club:t.club,human:t.human,players:t.players})) }); startRound(room); return; }
  const teamIdx = room.draft.order[room.draft.index];
  const team = room.teams[teamIdx];
- room.draft.options = makeOptions(5);
+ room.draft.options = makeOptions(10);
  io.to(room.code).emit('mp:draftState', { index:room.draft.index, total:room.draft.order.length, teamId:team.id, club:team.club, human:team.human, botDelayMs: team.human ? 0 : BOT_PICK_DELAY_MS, options: team.human ? room.draft.options : [], teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human})) });
  if(!team.human){ setTimeout(()=>{ const pick=room.draft.options[rnd(0,room.draft.options.length-1)]; applyPick(room, team.id, pick.id); }, BOT_PICK_DELAY_MS); }
 }

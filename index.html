@@ -1326,7 +1326,7 @@ table{width:100%;border-collapse:collapse} th,td{padding:9px;border-bottom:1px s
 </head>
 <body>
 <div class="wrap">
-  <div class="header"><div class="logo"><div class="badge">DH</div><div><h1>Draft Histórico v27</h1><div class="sub">Base real expandida • 2500 cartas • MAT + SA versátil</div></div></div><button class="secondary" onclick="location.reload()">Novo jogo</button></div>
+  <div class="header"><div class="logo"><div class="badge">DH</div><div><h1>Draft Histórico v29</h1><div class="sub">Base real expandida • 2500 cartas • MAT + SA versátil</div></div></div><button class="secondary" onclick="location.reload()">Novo jogo</button></div>
 
   <section id="setup" class="screen active">
     <div class="startHero">
@@ -3312,7 +3312,7 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
 </style>
 <div id="mpOverlay">
   <div class="mpBox">
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v28: draft em turnos, todos veem as escolhas, bots escolhem em 2 segundos e rodadas simultâneas.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v29: visual do draft online igual ao solo, OVR oculto antes da escolha, bots escolhem em 2 segundos.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
     <div id="mpHome" class="mpGrid" style="margin-top:18px">
       <div class="mpBox"><h2>Criar sala</h2><input id="mpClubCreate" class="mpInput" placeholder="Nome do clube" value="Campo Grande FC"><input id="mpPassCreate" class="mpInput" placeholder="Senha da sala"><button class="mpBtn" onclick="MP.createRoom()">Criar sala</button></div>
       <div class="mpBox"><h2>Entrar em sala</h2><input id="mpCodeJoin" class="mpInput" placeholder="Código de 8 dígitos"><input id="mpPassJoin" class="mpInput" placeholder="Senha"><input id="mpClubJoin" class="mpInput" placeholder="Nome do clube"><button class="mpBtn" onclick="MP.joinRoom()">Entrar</button></div>
@@ -3323,15 +3323,50 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
     <div id="mpStandings" style="display:none;margin-top:18px"><h2>Classificação</h2><p class="mpSub">Próxima rodada começa automaticamente em 10 segundos.</p><table id="mpStandingsTable" class="mpTable"></table></div>
   </div>
 </div>
+
+<style>
+/* V29 - draft online com a mesma cara do draft solo */
+#mpOptions.mpCards{grid-template-columns:repeat(5,minmax(105px,1fr));gap:10px;align-items:start}
+#mpOptions .playerCard{min-height:210px}
+#mpOptions .fakePhoto{height:54px!important;background:radial-gradient(circle at 50% 0%,rgba(216,180,79,.28),transparent 52%),linear-gradient(145deg,#213954,#0b1321)!important}
+#mpOptions .playerInfo{padding:9px 8px 10px!important}
+#mpOptions .name{font-size:14px!important;line-height:1.05!important;min-height:30px;display:flex;align-items:center;justify-content:center}
+#mpOptions .meta{font-size:11px!important;margin-top:4px!important}
+#mpOptions .miniPill{font-size:9px!important;padding:4px 6px!important}
+@media(max-width:900px){#mpOptions.mpCards{grid-template-columns:repeat(2,1fr)}}
+</style>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 (function(){
  let socket=null, roomCode=null, myId=null;
  function by(id){return document.getElementById(id)}
  function show(sec){['mpHome','mpLobby','mpDraft','mpMatch','mpStandings'].forEach(id=>by(id).style.display=id===sec?'block':'none')}
- function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{by('mpDraftSub').textContent=d.club+' escolheu '+d.card.name+' ('+d.card.pos+')'; const opts=by('mpOptions'); if(opts) opts.innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>Escolha feita</h2><p class="mpSub">'+d.club+' escolheu <b>'+d.card.name+'</b> ('+d.card.pos+', '+d.card.year+')</p></div>';}); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
+ function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{by('mpDraftSub').textContent=d.club+' escolheu '+d.card.name+' ('+d.card.pos+')'; const opts=by('mpOptions'); if(opts) opts.innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>Escolha feita</h2><p class="mpSub">'+mpEsc(d.club)+' escolheu <b>'+mpEsc(d.card.name)+'</b> ('+mpEsc(d.card.pos)+', '+mpEsc(d.card.year)+') • <b>OVR '+mpEsc(d.card.ovr)+'</b></p><p class="mpSub">OVR revelado somente após a escolha confirmada.</p></div>';}); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
  function renderRoom(r){ roomCode=r.code; by('mpRoomCode').textContent=r.code; by('mpPlayers').innerHTML=r.players.map((p,i)=>'<span class="mpPill">'+(i+1)+'. '+p.club+(p.id===r.hostId?' 👑':'')+'</span>').join(''); by('mpStartBtn').style.display=(myId===r.hostId && r.phase==='lobby')?'inline-block':'none'; if(r.phase==='lobby') show('mpLobby'); }
- function renderDraft(d){show('mpDraft'); const isMe=d.teamId===myId; by('mpDraftTitle').textContent='Draft '+(d.index+1)+' / '+d.total; by('mpDraftSub').textContent='Vez de: '+d.club+(isMe?' — SUA VEZ':(d.human?' — aguardando esse player escolher':' — 🤖 bot escolhendo, aguarde 2s')); by('mpDraftTeams').innerHTML=d.teams.map(t=>'<span class="mpPill">'+t.club+': '+t.count+'/11</span>').join(''); if(isMe){ by('mpOptions').innerHTML=(d.options||[]).map(c=>'<div class="mpCard" onclick="MP.pick(\''+c.id+'\')"><b>'+c.name+'</b><div>'+c.pos+' • '+c.year+'</div><div>OVR '+c.ovr+'</div></div>').join(''); } else { by('mpOptions').innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>'+d.club+'</h2><p class="mpSub">'+(d.human?'Esse player está escolhendo agora.':'Bot escolhendo automaticamente em 2 segundos.')+'</p></div>'; } }
+ function mpEsc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]})}
+ function mpDraftCardHtml(c){
+   const flag=(typeof flagForPlayer==='function')?flagForPlayer(c):'⚽';
+   const kit=(typeof kitForPlayer==='function')?kitForPlayer(c):'👕';
+   return '<div class="playerCard mpDraftCard" onclick="MP.pick(\''+mpEsc(c.id)+'\')">'+
+     '<div class="pos '+mpEsc(c.pos)+'">'+mpEsc(c.pos)+'</div><div class="cardFlag">'+flag+'</div>'+
+     '<div class="fakePhoto"><div class="compactKit">'+kit+'</div></div>'+
+     '<div class="playerInfo"><div class="name">'+mpEsc(c.name).toUpperCase()+'</div>'+
+     '<div class="meta">'+mpEsc(c.club||'HISTÓRICO').toUpperCase()+' • '+mpEsc(c.year)+'</div>'+
+     '<div class="cardFooterMini"><span class="miniPill">'+mpEsc(c.pos)+'</span><span class="miniPill">OVR OCULTO</span></div></div></div>';
+ }
+ function renderDraft(d){
+   show('mpDraft');
+   const isMe=d.teamId===myId;
+   by('mpDraftTitle').textContent='Draft '+(d.index+1)+' / '+d.total;
+   by('mpDraftSub').textContent='Vez de: '+d.club+(isMe?' — SUA VEZ':(d.human?' — aguardando esse player escolher':' — 🤖 bot escolhendo, aguarde 2s'));
+   by('mpDraftTeams').innerHTML=d.teams.map(t=>'<span class="mpPill">'+mpEsc(t.club)+': '+t.count+'/11</span>').join('');
+   if(isMe){
+     by('mpOptions').innerHTML=(d.options||[]).map(mpDraftCardHtml).join('');
+   } else {
+     by('mpOptions').innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">'+(d.human?'Esse player está escolhendo agora.':'Bot escolhendo automaticamente em 2 segundos.')+'</p></div>';
+   }
+ }
  function renderMatch(m){ by('mpMatchTitle').textContent=m.home.club+' x '+m.away.club; by('mpScore').textContent=m.h+' x '+m.a; by('mpClock').textContent=m.minute+"'"; }
  function renderStandings(d){ show('mpStandings'); by('mpStandingsTable').innerHTML='<tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'+d.standings.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s.club+(s.human?' 👤':' 🤖')+'</td><td>'+s.PTS+'</td><td>'+s.P+'</td><td>'+s.V+'</td><td>'+s.E+'</td><td>'+s.D+'</td><td>'+(s.GP-s.GC)+'</td></tr>').join(''); }
  window.MP={ open(){ensureSocket();by('mpOverlay').classList.add('show');show('mpHome')}, close(){by('mpOverlay').classList.remove('show')}, createRoom(){ensureSocket().emit('mp:createRoom',{club:by('mpClubCreate').value,password:by('mpPassCreate').value})}, joinRoom(){roomCode=by('mpCodeJoin').value;ensureSocket().emit('mp:joinRoom',{code:roomCode,password:by('mpPassJoin').value,club:by('mpClubJoin').value})}, startDraft(){ensureSocket().emit('mp:startDraft',{code:roomCode})}, pick(id){ensureSocket().emit('mp:pick',{code:roomCode,cardId:id}); by('mpOptions').innerHTML='<p class="mpSub">Escolha enviada. Aguardando servidor...</p>'} };

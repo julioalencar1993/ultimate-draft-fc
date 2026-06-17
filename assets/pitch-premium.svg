@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="none">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#195f2d"/><stop offset="0.55" stop-color="#0f4723"/><stop offset="1" stop-color="#082c17"/></linearGradient>
+<radialGradient id="light" cx="50%" cy="42%" r="65%"><stop offset="0" stop-color="#5aa55a" stop-opacity="0.34"/><stop offset="0.45" stop-color="#2d7a37" stop-opacity="0.16"/><stop offset="1" stop-color="#000" stop-opacity="0.28"/></radialGradient>
+<filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .08"/></feComponentTransfer></filter>
+</defs>
+<rect width="1600" height="900" fill="url(#g)"/>
+<g opacity="0.21">
+<rect x="0" y="0" width="100" height="900" fill="#b6ffb6"/><rect x="200" y="0" width="100" height="900" fill="#b6ffb6"/><rect x="400" y="0" width="100" height="900" fill="#b6ffb6"/><rect x="600" y="0" width="100" height="900" fill="#b6ffb6"/><rect x="800" y="0" width="100" height="900" fill="#b6ffb6"/><rect x="1000" y="0" width="100" height="900" fill="#b6ffb6"/><rect x="1200" y="0" width="100" height="900" fill="#b6ffb6"/><rect x="1400" y="0" width="100" height="900" fill="#b6ffb6"/>
+</g>
+<rect width="1600" height="900" fill="url(#light)"/>
+<rect width="1600" height="900" filter="url(#noise)"/>
+<g fill="none" stroke="#d9f5d9" stroke-opacity="0.34" stroke-width="3">
+<rect x="70" y="60" width="1460" height="780" rx="8"/>
+<line x1="800" y1="60" x2="800" y2="840"/>
+<circle cx="800" cy="450" r="92"/>
+<rect x="70" y="265" width="150" height="370"/><rect x="1380" y="265" width="150" height="370"/>
+<rect x="70" y="345" width="70" height="210"/><rect x="1460" y="345" width="70" height="210"/>
+<path d="M220 335a130 130 0 0 1 0 230"/><path d="M1380 335a130 130 0 0 0 0 230"/>
+</g>
+<rect width="1600" height="900" fill="none" stroke="#093515" stroke-width="20" opacity=".35"/>
+</svg>

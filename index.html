@@ -1326,7 +1326,7 @@ table{width:100%;border-collapse:collapse} th,td{padding:9px;border-bottom:1px s
 </head>
 <body>
 <div class="wrap">
-  <div class="header"><div class="logo"><div class="badge">DH</div><div><h1>Draft Histórico v30</h1><div class="sub">Base real expandida • 2500 cartas • MAT + SA versátil</div></div></div><button class="secondary" onclick="location.reload()">Novo jogo</button></div>
+  <div class="header"><div class="logo"><div class="badge">DH</div><div><h1>Draft Histórico v29</h1><div class="sub">Base real expandida • 2500 cartas • MAT + SA versátil</div></div></div><button class="secondary" onclick="location.reload()">Novo jogo</button></div>
 
   <section id="setup" class="screen active">
     <div class="startHero">
@@ -1345,7 +1345,7 @@ table{width:100%;border-collapse:collapse} th,td{padding:9px;border-bottom:1px s
         </div>
 
         <div class="featureGrid">
-          <div class="feature"><b>Surpresa no draft</b><span>Você descobre a força da carta depois que escolhe.</span></div>
+          <div class="feature"><b>Overall oculto</b><span>Você só vê nome, ano, clube e posição durante o draft.</span></div>
           <div class="feature"><b>Sem reservas</b><span>Agora o foco é montar exatamente os 11 titulares.</span></div>
           <div class="feature"><b>Escolha de posição</b><span>Após o pick, você define em qual vaga da formação o jogador entra.</span></div>
           <div class="feature"><b>Partida animada</b><span>Bola, jogadores, gols e placar ao vivo em 40 segundos.</span></div>
@@ -3139,7 +3139,7 @@ function renderOptions(team){
    p.secondaryPos=p.secondaryPos||secondaryPositions(p);
    let d=document.createElement("div");d.className="playerCard";
    let hint=firstSlot?fitText(p,firstSlot.pos):"";let pen=firstSlot?positionPenalty(p,firstSlot.pos):0;
-   d.innerHTML=`<div class="pos ${p.pos}">${p.pos}</div><div class="cardFlag">${flagForPlayer(p)}</div><div class="fakePhoto"><div class="compactKit">${kitForPlayer(p)}</div></div><div class="playerInfo"><div class="name">${p.name.toUpperCase()}</div><div class="meta">${p.club.toUpperCase()} • ${p.year}</div><div class="cardFooterMini"><span class="miniPill">${p.pos}</span><span class="miniPill">${p.year}</span></div>${firstSlot?`<div class="fitHint ${pen>8?'bad':pen>0?'warn':''}">${hint}</div>`:""}</div>`;
+   d.innerHTML=`<div class="pos ${p.pos}">${p.pos}</div><div class="cardFlag">${flagForPlayer(p)}</div><div class="fakePhoto"><div class="compactKit">${kitForPlayer(p)}</div></div><div class="playerInfo"><div class="name">${p.name.toUpperCase()}</div><div class="meta">${p.club.toUpperCase()} • ${p.year}</div><div class="cardFooterMini"><span class="miniPill">${p.pos}</span></div>${firstSlot?`<div class="fitHint ${pen>8?'bad':pen>0?'warn':''}">${hint}</div>`:""}</div>`;
    d.onclick=()=>{selectedPick=p;document.querySelectorAll(".playerCard").forEach(c=>c.classList.remove("selected"));d.classList.add("selected");document.getElementById("chosenName").textContent=`${p.name} ${p.year} - ${p.club}`};
    box.appendChild(d);
  });
@@ -3308,50 +3308,122 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
 </script>
 
 <style>
-#mpOverlay{position:fixed;inset:0;background:radial-gradient(circle at top,#17304b,#02050a 72%);z-index:9999;color:#f4f7fb;display:none;overflow:auto;padding:22px;font-family:Arial,Helvetica,sans-serif}#mpOverlay.show{display:block}.mpBox{max-width:1280px;margin:0 auto;background:rgba(9,15,25,.96);border:1px solid rgba(216,180,79,.34);border-radius:20px;padding:18px;box-shadow:0 25px 80px rgba(0,0,0,.5)}.mpGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mpBtn{cursor:pointer;background:linear-gradient(#e3c267,#aa7b22);color:#101010;border:0;border-radius:12px;font-weight:900;padding:12px}.mpBtn.secondary{background:#172538;color:#fff;border:1px solid rgba(255,255,255,.13)}.mpInput{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.13);padding:12px;background:#121d2c;color:#fff;margin:6px 0 10px}.mpTitle{color:#d8b44f}.mpSub{color:#a8b4c7}.mpPill{display:inline-block;background:#14243a;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 10px;margin:4px}.mpOnlineBtn{margin-top:14px;width:100%;background:linear-gradient(#7ee7ff,#2786a7)!important;color:#06101d!important}.mpDraftShell{display:grid;grid-template-columns:330px minmax(420px,1fr) 310px;gap:14px;align-items:start}.mpPanel{background:rgba(6,13,24,.88);border:1px solid rgba(255,255,255,.11);border-radius:18px;padding:14px}.mpPitch{height:520px;border-radius:20px;background:linear-gradient(180deg,#0e703d,#064b2d);border:2px solid rgba(255,255,255,.55);position:relative;overflow:hidden}.mpPitch:before{content:"";position:absolute;inset:18px;border:2px solid rgba(255,255,255,.28);border-radius:14px}.mpPitch:after{content:"";position:absolute;left:50%;top:18px;bottom:18px;border-left:2px solid rgba(255,255,255,.22)}.mpCenterCircle{position:absolute;width:120px;height:120px;border:2px solid rgba(255,255,255,.25);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}.mpSlot{position:absolute;transform:translate(-50%,-50%);min-width:72px;max-width:86px;text-align:center;background:rgba(5,11,18,.82);border:1px solid rgba(216,180,79,.55);border-radius:12px;padding:6px 5px;font-size:10px;box-shadow:0 10px 18px rgba(0,0,0,.35)}.mpSlot.empty{opacity:.7;border-style:dashed}.mpSlot b{display:block;color:#fff;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mpSlot span{display:block;color:#d8b44f;font-weight:900}.mpCards{display:grid;grid-template-columns:repeat(5,minmax(105px,1fr));gap:10px;margin-top:12px;align-items:start}.mpCards .playerCard{min-height:210px;cursor:pointer}.mpCards .fakePhoto{height:54px!important;background:radial-gradient(circle at 50% 0%,rgba(216,180,79,.28),transparent 52%),linear-gradient(145deg,#213954,#0b1321)!important}.mpCards .playerInfo{padding:9px 8px 10px!important}.mpCards .name{font-size:14px!important;line-height:1.05!important;min-height:30px;display:flex;align-items:center;justify-content:center}.mpCards .meta{font-size:11px!important;margin-top:4px!important}.mpCards .miniPill{font-size:9px!important;padding:4px 6px!important}.mpFeed{height:460px;overflow:auto;background:#06101d;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px}.mpFeedItem{border-bottom:1px solid rgba(255,255,255,.08);padding:8px 4px;color:#dce6f5;font-size:13px}.mpFeedItem b{color:#d8b44f}.mpOrder{max-height:160px;overflow:auto;margin-top:8px}.mpTable{width:100%;border-collapse:separate;border-spacing:0 7px}.mpTable th{font-size:12px;color:#9fb0c6;text-align:left;padding:6px}.mpTable td{background:#0b1625;padding:10px 8px;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}.mpTable tr td:first-child{border-radius:12px 0 0 12px}.mpTable tr td:last-child{border-radius:0 12px 12px 0}.mpRank1 td{background:linear-gradient(90deg,rgba(216,180,79,.28),#0b1625)}.mpRank2 td{background:linear-gradient(90deg,rgba(190,200,215,.22),#0b1625)}.mpRank3 td{background:linear-gradient(90deg,rgba(184,115,51,.22),#0b1625)}.mpScore{font-size:48px;font-weight:1000;color:#d8b44f;text-align:center;margin:18px}.mpLog{height:180px;overflow:auto;background:#06101d;border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:10px}.mpTabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}.mpTab{border:1px solid rgba(255,255,255,.12);background:#111d2d;color:#fff;border-radius:999px;padding:8px 12px;font-weight:800}.mpTab.active{background:#d8b44f;color:#111}@media(max-width:1100px){.mpDraftShell{grid-template-columns:1fr}.mpPitch{height:430px}.mpGrid,.mpCards{grid-template-columns:1fr 1fr}}@media(max-width:700px){.mpCards{grid-template-columns:1fr}.mpGrid{grid-template-columns:1fr}}
+#mpOverlay{position:fixed;inset:0;background:radial-gradient(circle at top,#152b42,#02050a 70%);z-index:9999;color:#f4f7fb;display:none;overflow:auto;padding:24px;font-family:Arial,Helvetica,sans-serif}#mpOverlay.show{display:block}.mpBox{max-width:1100px;margin:0 auto;background:rgba(9,15,25,.96);border:1px solid rgba(216,180,79,.35);border-radius:20px;padding:18px;box-shadow:0 25px 80px rgba(0,0,0,.5)}.mpGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mpBtn{cursor:pointer;background:linear-gradient(#e3c267,#aa7b22);color:#101010;border:0;border-radius:12px;font-weight:900;padding:12px}.mpBtn.secondary{background:#172538;color:#fff;border:1px solid rgba(255,255,255,.13)}.mpInput{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.13);padding:12px;background:#121d2c;color:#fff;margin:6px 0 10px}.mpTitle{color:#d8b44f}.mpSub{color:#a8b4c7}.mpCards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}.mpCard{background:#101a29;border:1px solid rgba(216,180,79,.5);border-radius:14px;padding:12px;text-align:center;cursor:pointer}.mpCard b{display:block;font-size:18px}.mpTable{width:100%;border-collapse:collapse}.mpTable th,.mpTable td{border-bottom:1px solid rgba(255,255,255,.12);padding:7px;text-align:left}.mpLog{height:180px;overflow:auto;background:#06101d;border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:10px}.mpScore{font-size:48px;font-weight:1000;color:#d8b44f;text-align:center;margin:18px}.mpPill{display:inline-block;background:#14243a;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 10px;margin:4px}.mpOnlineBtn{margin-top:14px;width:100%;background:linear-gradient(#7ee7ff,#2786a7)!important;color:#06101d!important}@media(max-width:900px){.mpGrid,.mpCards{grid-template-columns:1fr}}
 </style>
 <div id="mpOverlay">
   <div class="mpBox">
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v30: campo no draft, ordem aleatória serpente, feed de picks e classificação reformulada.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v29: visual do draft online igual ao solo, OVR oculto antes da escolha, bots escolhem em 2 segundos.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
     <div id="mpHome" class="mpGrid" style="margin-top:18px">
       <div class="mpBox"><h2>Criar sala</h2><input id="mpClubCreate" class="mpInput" placeholder="Nome do clube" value="Campo Grande FC"><input id="mpPassCreate" class="mpInput" placeholder="Senha da sala"><button class="mpBtn" onclick="MP.createRoom()">Criar sala</button></div>
       <div class="mpBox"><h2>Entrar em sala</h2><input id="mpCodeJoin" class="mpInput" placeholder="Código de 8 dígitos"><input id="mpPassJoin" class="mpInput" placeholder="Senha"><input id="mpClubJoin" class="mpInput" placeholder="Nome do clube"><button class="mpBtn" onclick="MP.joinRoom()">Entrar</button></div>
     </div>
     <div id="mpLobby" style="display:none;margin-top:18px"><h2>Sala <span id="mpRoomCode" class="mpTitle"></span></h2><p class="mpSub">Compartilhe o código e a senha. O dono inicia o draft.</p><div id="mpPlayers"></div><button id="mpStartBtn" class="mpBtn" onclick="MP.startDraft()">Iniciar draft</button></div>
-    <div id="mpDraft" style="display:none;margin-top:18px">
-      <h2 id="mpDraftTitle">Draft</h2><p id="mpDraftSub" class="mpSub"></p>
-      <div class="mpDraftShell">
-        <div class="mpPanel"><h3>Seu campo</h3><p class="mpSub" id="mpMyTeamInfo">0/11 escolhidos</p><div id="mpPitch" class="mpPitch"><div class="mpCenterCircle"></div></div></div>
-        <div class="mpPanel"><div id="mpDraftTeams"></div><div id="mpOptions" class="mpCards"></div></div>
-        <div class="mpPanel"><h3>📋 Histórico</h3><div id="mpPickFeed" class="mpFeed"></div><h3 style="margin-top:12px">🎲 Ordem sorteada</h3><div id="mpDraftOrder" class="mpOrder"></div></div>
-      </div>
-    </div>
+    <div id="mpDraft" style="display:none;margin-top:18px"><h2 id="mpDraftTitle">Draft</h2><p id="mpDraftSub" class="mpSub"></p><div id="mpDraftTeams"></div><div id="mpOptions" class="mpCards"></div></div>
     <div id="mpMatch" style="display:none;margin-top:18px"><h2 id="mpMatchTitle">Partida</h2><div id="mpClock" class="mpTitle" style="text-align:center;font-size:34px">0'</div><div id="mpScore" class="mpScore">0 x 0</div><div class="mpLog" id="mpMatchLog"></div></div>
-    <div id="mpStandings" style="display:none;margin-top:18px"><h2>🏆 Campeonato</h2><p class="mpSub">Próxima rodada começa automaticamente em 10 segundos.</p><div class="mpTabs"><button class="mpTab active">Classificação</button><button class="mpTab">⚽ Artilharia</button><button class="mpTab">👟 Assistências</button></div><table id="mpStandingsTable" class="mpTable"></table></div>
+    <div id="mpStandings" style="display:none;margin-top:18px"><h2>Classificação</h2><p class="mpSub">Próxima rodada começa automaticamente em 10 segundos.</p><table id="mpStandingsTable" class="mpTable"></table></div>
   </div>
 </div>
+
+<style>
+/* V29 - draft online com a mesma cara do draft solo */
+#mpOptions.mpCards{grid-template-columns:repeat(5,minmax(105px,1fr));gap:10px;align-items:start}
+#mpOptions .playerCard{min-height:210px}
+#mpOptions .fakePhoto{height:54px!important;background:radial-gradient(circle at 50% 0%,rgba(216,180,79,.28),transparent 52%),linear-gradient(145deg,#213954,#0b1321)!important}
+#mpOptions .playerInfo{padding:9px 8px 10px!important}
+#mpOptions .name{font-size:14px!important;line-height:1.05!important;min-height:30px;display:flex;align-items:center;justify-content:center}
+#mpOptions .meta{font-size:11px!important;margin-top:4px!important}
+#mpOptions .miniPill{font-size:9px!important;padding:4px 6px!important}
+@media(max-width:900px){#mpOptions.mpCards{grid-template-columns:repeat(2,1fr)}}
+</style>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 (function(){
- let socket=null, roomCode=null, myId=null, lastTeams=[], lastPickLog=[], lastOrder=[];
- const coords=[['GK',50,90],['LD',82,72],['ZAG',62,75],['ZAG',38,75],['LE',18,72],['VOL',50,58],['MC',35,48],['MC',65,48],['PD',82,28],['ATA',50,20],['PE',18,28]];
+ let socket=null, roomCode=null, myId=null, mpCurrentDraft=null, mpPendingCard=null;
  function by(id){return document.getElementById(id)}
  function show(sec){['mpHome','mpLobby','mpDraft','mpMatch','mpStandings'].forEach(id=>by(id).style.display=id===sec?'block':'none')}
- function mpEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})}
- function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{lastTeams=d.teams||lastTeams; lastPickLog=d.pickLog||lastPickLog; renderPitch(); renderFeed(); by('mpDraftSub').textContent=d.club+' escolheu '+d.card.name+' ('+d.card.pos+')'; const opts=by('mpOptions'); if(opts) opts.innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>Escolha feita</h2><p class="mpSub">'+mpEsc(d.club)+' escolheu <b>'+mpEsc(d.card.name)+'</b> ('+mpEsc(d.card.pos)+', '+mpEsc(d.card.year)+') • OVR <b>'+mpEsc(d.card.ovr)+'</b></p></div>';}); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+mpEsc(d.event.scorer)+' - '+mpEsc(d.event.club)+' ('+mpEsc(d.event.score)+')</div>'+log.innerHTML}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
- function renderRoom(r){ roomCode=r.code; by('mpRoomCode').textContent=r.code; by('mpPlayers').innerHTML=r.players.map((p,i)=>'<span class="mpPill">'+(i+1)+'. '+mpEsc(p.club)+(p.id===r.hostId?' 👑':'')+'</span>').join(''); by('mpStartBtn').style.display=(myId===r.hostId && r.phase==='lobby')?'inline-block':'none'; if(r.phase==='lobby') show('mpLobby'); }
- function mpDraftCardHtml(c){ const flag=(typeof flagForPlayer==='function')?flagForPlayer(c):'⚽'; const kit=(typeof kitForPlayer==='function')?kitForPlayer(c):'👕'; return '<div class="playerCard mpDraftCard" onclick="MP.pick(\''+mpEsc(c.id)+'\')"><div class="pos '+mpEsc(c.pos)+'">'+mpEsc(c.pos)+'</div><div class="cardFlag">'+flag+'</div><div class="fakePhoto"><div class="compactKit">'+kit+'</div></div><div class="playerInfo"><div class="name">'+mpEsc(c.name).toUpperCase()+'</div><div class="meta">'+mpEsc(c.club||'HISTÓRICO').toUpperCase()+' • '+mpEsc(c.year)+'</div><div class="cardFooterMini"><span class="miniPill">'+mpEsc(c.pos)+'</span><span class="miniPill">'+mpEsc(c.year)+'</span></div></div></div>'; }
- function renderDraft(d){ show('mpDraft'); lastTeams=d.teams||lastTeams; lastPickLog=d.pickLog||lastPickLog; lastOrder=d.order||lastOrder; const isMe=d.teamId===myId; const round=Math.floor(d.index/20)+1; const pickInRound=(d.index%20)+1; by('mpDraftTitle').textContent='Rodada '+round+' • Pick '+pickInRound+'/20'; by('mpDraftSub').textContent='Vez de: '+d.club+(isMe?' — SUA VEZ':(d.human?' — aguardando esse player escolher':' — 🤖 bot escolhendo, aguarde 2s')); by('mpDraftTeams').innerHTML=d.teams.map(t=>'<span class="mpPill">'+mpEsc(t.club)+': '+t.count+'/11</span>').join(''); renderPitch(); renderFeed(); renderOrder(); if(isMe){ by('mpOptions').innerHTML=(d.options||[]).map(mpDraftCardHtml).join(''); } else { by('mpOptions').innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">'+(d.human?'Esse player está escolhendo agora.':'Bot escolhendo automaticamente em 2 segundos.')+'</p></div>'; } }
- function renderPitch(){ const t=lastTeams.find(x=>x.id===myId)||lastTeams[0]||{players:[],club:'Seu clube'}; by('mpMyTeamInfo').textContent=mpEsc(t.club)+' • '+(t.players?t.players.length:0)+'/11 escolhidos'; const used=(t.players||[]).slice(0,11); by('mpPitch').innerHTML='<div class="mpCenterCircle"></div>'+coords.map((c,i)=>{ const p=used[i]; return '<div class="mpSlot '+(p?'':'empty')+'" style="left:'+c[1]+'%;top:'+c[2]+'%"><span>'+(p?mpEsc(p.assignedPos||p.pos):c[0])+'</span><b>'+(p?mpEsc(p.name):'Vazio')+'</b>'+(p?'<span>OVR '+mpEsc(p.ovr)+'</span>':'')+'</div>'; }).join(''); }
- function renderFeed(){ const log=lastPickLog||[]; by('mpPickFeed').innerHTML=log.length?log.slice().reverse().map(x=>'<div class="mpFeedItem">R'+x.round+' • <b>'+mpEsc(x.club)+'</b> escolheu '+mpEsc(x.card.name)+' <span class="mpTitle">('+mpEsc(x.card.pos)+')</span></div>').join(''):'<p class="mpSub">As escolhas aparecerão aqui.</p>'; }
- function renderOrder(){ by('mpDraftOrder').innerHTML=(lastOrder||[]).map((x,i)=>'<span class="mpPill">'+(i+1)+'. '+mpEsc(x.club)+(x.human?' 👤':' 🤖')+'</span>').join(''); }
- function renderMatch(m){ by('mpMatchTitle').textContent=mpEsc(m.home.club)+' x '+mpEsc(m.away.club); by('mpScore').textContent=m.h+' x '+m.a; by('mpClock').textContent=m.minute+"'"; }
- function formDots(f){return (f||[]).map(x=>x==='V'?'🟢':x==='E'?'🟡':'🔴').join(' ')}
- function renderStandings(d){ show('mpStandings'); by('mpStandingsTable').innerHTML='<tr><th>Pos</th><th>Time</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Forma</th></tr>'+d.standings.map((s,i)=>'<tr class="'+(i===0?'mpRank1':i===1?'mpRank2':i===2?'mpRank3':'')+'"><td><b>'+(i+1)+'º</b></td><td>'+mpEsc(s.club)+(s.human?' 👤':' 🤖')+'</td><td><b>'+s.PTS+'</b></td><td>'+s.P+'</td><td>'+s.V+'</td><td>'+s.E+'</td><td>'+s.D+'</td><td>'+s.GP+'</td><td>'+s.GC+'</td><td>'+(s.GP-s.GC)+'</td><td>'+formDots(s.form)+'</td></tr>').join(''); }
- window.MP={ open(){ensureSocket();by('mpOverlay').classList.add('show');show('mpHome')}, close(){by('mpOverlay').classList.remove('show')}, createRoom(){ensureSocket().emit('mp:createRoom',{club:by('mpClubCreate').value,password:by('mpPassCreate').value})}, joinRoom(){roomCode=by('mpCodeJoin').value;ensureSocket().emit('mp:joinRoom',{code:roomCode,password:by('mpPassJoin').value,club:by('mpClubJoin').value})}, startDraft(){ensureSocket().emit('mp:startDraft',{code:roomCode})}, pick(id){ensureSocket().emit('mp:pick',{code:roomCode,cardId:id}); by('mpOptions').innerHTML='<p class="mpSub">Escolha enviada. Aguardando servidor...</p>'} };
+ function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{by('mpDraftSub').textContent=d.club+' escolheu '+d.card.name+' ('+d.card.pos+')'; const opts=by('mpOptions'); if(opts) opts.innerHTML='<div class="mpBox" style="grid-column:1/-1;text-align:center"><h2>Escolha feita</h2><p class="mpSub">'+mpEsc(d.club)+' escolheu <b>'+mpEsc(d.card.name)+'</b> ('+mpEsc(d.card.pos)+', '+mpEsc(d.card.year)+') • <b>OVR '+mpEsc(d.card.ovr)+'</b></p></div>';}); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
+ function renderRoom(r){ roomCode=r.code; by('mpRoomCode').textContent=r.code; by('mpPlayers').innerHTML=r.players.map((p,i)=>'<span class="mpPill">'+(i+1)+'. '+p.club+(p.id===r.hostId?' 👑':'')+'</span>').join(''); by('mpStartBtn').style.display=(myId===r.hostId && r.phase==='lobby')?'inline-block':'none'; if(r.phase==='lobby') show('mpLobby'); }
+ function mpEsc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]})}
+ function mpDraftCardHtml(c){
+   const flag=(typeof flagForPlayer==='function')?flagForPlayer(c):'⚽';
+   const kit=(typeof kitForPlayer==='function')?kitForPlayer(c):'👕';
+   return '<div class="playerCard mpDraftCard" onclick="MP.pick(\''+mpEsc(c.id)+'\')">'+
+     '<div class="pos '+mpEsc(c.pos)+'">'+mpEsc(c.pos)+'</div><div class="cardFlag">'+flag+'</div>'+
+     '<div class="fakePhoto"><div class="compactKit">'+kit+'</div></div>'+
+     '<div class="playerInfo"><div class="name">'+mpEsc(c.name).toUpperCase()+'</div>'+
+     '<div class="meta">'+mpEsc(c.club||'HISTÓRICO').toUpperCase()+' • '+mpEsc(c.year)+'</div>'+
+     '<div class="cardFooterMini"><span class="miniPill">'+mpEsc(c.pos)+'</span></div></div></div>';
+ }
+ function mpPosSector(pos){ if(pos==='GK') return 'GK'; if(['ZAG','LD','LE','ALA'].includes(pos)) return 'DEF'; if(['VOL','MC','MAT'].includes(pos)) return 'MID'; return 'ATT'; }
+ function mpFormationNeed(){ return ['GK','LD','ZAG','ZAG','LE','VOL','MC','MC','PE','ATA','PD']; }
+ function mpOpenSlots(team){
+   const need=mpFormationNeed();
+   const used={};
+   (team&&team.players?team.players:[]).forEach(p=>{ const k=p.assignedPos||p.pos; used[k]=(used[k]||0)+1; });
+   const countNeed={}; need.forEach(x=>countNeed[x]=(countNeed[x]||0)+1);
+   return need.filter(pos=>{ const u=used[pos]||0; used[pos]=u+1; return u < countNeed[pos]; });
+ }
+ function mpOpenPositionModal(card){
+   if(!mpCurrentDraft) return;
+   mpPendingCard=card;
+   const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[]};
+   const slots=mpOpenSlots(myTeam);
+   let final=slots.filter(pos=>pos===card.pos || mpPosSector(pos)===mpPosSector(card.pos));
+   if(!final.length) final=slots;
+   by('modalPlayerName').textContent=card.name+' '+card.year+' - '+(card.club||'Histórico')+' - '+card.pos;
+   const box=by('positionChoices');
+   box.innerHTML='';
+   final.forEach(pos=>{
+     const b=document.createElement('div');
+     b.className='posChoice';
+     b.innerHTML=mpEsc(pos)+'<div class="sub">Titular</div>';
+     b.onclick=()=>{
+       by('positionModal').style.display='none';
+       ensureSocket().emit('mp:pick',{code:roomCode,cardId:card.id,assignedPos:pos});
+       by('mpOptions').innerHTML='<p class="mpSub">Escolha enviada. Aguardando servidor...</p>';
+     };
+     box.appendChild(b);
+   });
+   by('positionModal').style.display='flex';
+ }
+ function renderMpPitch(){
+   if(!mpCurrentDraft) return '';
+   const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[]};
+   const coords={GK:[50,88],LD:[82,68],ZAG1:[62,72],ZAG2:[38,72],LE:[18,68],VOL:[50,55],MC1:[35,42],MC2:[65,42],PE:[22,24],ATA:[50,18],PD:[78,24]};
+   const need=mpFormationNeed(); const occ={}; const totalNeed={}; need.forEach(x=>totalNeed[x]=(totalNeed[x]||0)+1);
+   const slots=need.map(pos=>{occ[pos]=(occ[pos]||0)+1; return {pos,key:pos+(totalNeed[pos]>1?occ[pos]:'')};});
+   const players=(myTeam.players||[]).slice(); const used={};
+   return '<div class="sideFormation"><h3>Seu Campo</h3><div class="pitch">'+slots.map((sl,i)=>{
+     const p=players.find(x=>!used[x.id||x.name+i] && (x.assignedPos||x.pos)===sl.pos);
+     if(p) used[p.id||p.name+i]=true;
+     const k=sl.key; const xy=coords[k]||coords[sl.pos]||[50,50];
+     return '<div class="pitchPos '+(p?'filled':'')+'" style="left:'+xy[0]+'%;top:'+xy[1]+'%"><div><span class="ppos">'+mpEsc(sl.pos)+'</span>'+(p?'<span class="pname">'+mpEsc(p.name)+'<br>OVR '+mpEsc(p.ovr)+'</span>':'')+'</div></div>';
+   }).join('')+'</div></div>';
+ }
+ function renderPickFeed(log){
+   const items=(log||[]).slice().reverse();
+   return '<div class="mpBox"><h3>📋 Histórico</h3><div class="mpLog" style="height:460px">'+(items.length?items.map(l=>'<div><b>'+mpEsc(l.club)+'</b> escolheu '+mpEsc(l.card.name)+' ('+mpEsc(l.card.pos)+')</div>').join(''):'<p class="mpSub">Nenhum pick ainda.</p>')+'</div></div>';
+ }
+ function renderDraft(d){
+   mpCurrentDraft=d;
+   show('mpDraft');
+   const isMe=d.teamId===myId;
+   by('mpDraftTitle').textContent='Rodada '+(Math.floor(d.index/20)+1)+' • Pick '+(d.index+1)+' / '+d.total;
+   by('mpDraftSub').textContent='Vez de: '+d.club+(isMe?' — SUA VEZ':(d.human?' — aguardando esse player escolher':' — 🤖 bot escolhendo, aguarde 2s'));
+   by('mpDraftTeams').innerHTML=d.teams.map(t=>'<span class="mpPill">'+mpEsc(t.club)+': '+t.count+'/11</span>').join('');
+   const draftArea = '<div class="draftLayout" style="grid-template-columns:280px 1fr 280px;align-items:start">'+
+     renderMpPitch()+
+     '<div>'+(isMe?'<div id="mpOptionsInner" class="mpCards">'+(d.options||[]).map(mpDraftCardHtml).join('')+'</div>':'<div class="mpBox" style="text-align:center"><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">'+(d.human?'Esse player está escolhendo agora.':'Bot escolhendo automaticamente em 2 segundos.')+'</p></div>')+'</div>'+renderPickFeed(d.pickLog)+'</div>';
+   by('mpOptions').className='';
+   by('mpOptions').innerHTML=draftArea;
+ }
+ function renderMatch(m){ by('mpMatchTitle').textContent=m.home.club+' x '+m.away.club; by('mpScore').textContent=m.h+' x '+m.a; by('mpClock').textContent=m.minute+"'"; }
+ function renderStandings(d){ show('mpStandings'); by('mpStandingsTable').innerHTML='<tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'+d.standings.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s.club+(s.human?' 👤':' 🤖')+'</td><td>'+s.PTS+'</td><td>'+s.P+'</td><td>'+s.V+'</td><td>'+s.E+'</td><td>'+s.D+'</td><td>'+(s.GP-s.GC)+'</td></tr>').join(''); }
+ window.MP={ open(){ensureSocket();by('mpOverlay').classList.add('show');show('mpHome')}, close(){by('mpOverlay').classList.remove('show')}, createRoom(){ensureSocket().emit('mp:createRoom',{club:by('mpClubCreate').value,password:by('mpPassCreate').value})}, joinRoom(){roomCode=by('mpCodeJoin').value;ensureSocket().emit('mp:joinRoom',{code:roomCode,password:by('mpPassJoin').value,club:by('mpClubJoin').value})}, startDraft(){ensureSocket().emit('mp:startDraft',{code:roomCode})}, pick(id){ const card=(mpCurrentDraft&&mpCurrentDraft.options||[]).find(c=>c.id===id); if(card) mpOpenPositionModal(card); } };
  window.addEventListener('load',()=>{ const btn=document.createElement('button'); btn.className='startButton mpOnlineBtn'; btn.textContent='Jogar entre amigos (Online)'; btn.onclick=()=>MP.open(); const panel=document.querySelector('.setupPanel'); if(panel) panel.appendChild(btn); });
 })();
 </script>
+
 </body>
 </html>

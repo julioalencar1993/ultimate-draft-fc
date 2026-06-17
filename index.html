@@ -1322,6 +1322,32 @@ table{width:100%;border-collapse:collapse} th,td{padding:9px;border-bottom:1px s
   text-align:center;
 }
 
+
+/* ===== V44: campo do draft mais limpo, 12 formações, sem rolagem ===== */
+html,body{overflow-x:hidden}
+.draftLayout{grid-template-columns:minmax(360px,420px) 1fr;gap:14px;align-items:start}
+.sideFormation{position:sticky;top:10px;max-height:calc(100vh - 24px);overflow:visible;padding:14px}
+.pitch{height:min(59vh,560px);min-height:500px;margin-top:10px}
+.pitchPos{width:74px;height:46px;border-radius:12px;font-size:11px;box-shadow:0 8px 18px rgba(0,0,0,.35)}
+.pitchPos .ppos{display:block;font-size:10px;color:var(--gold);letter-spacing:.3px}
+.pitchPos .pname{display:block;font-size:9px;max-width:68px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;margin-top:2px}
+.pitchPos .effOvr,.pitchPos .fitWarn{font-size:8px;line-height:1;margin-top:1px}
+.pickGrid{grid-template-columns:repeat(5,minmax(110px,1fr));gap:10px;min-height:0}
+.playerCard{min-height:196px}
+.fakePhoto{height:106px}
+.playerInfo{padding:8px}.playerInfo .name{font-size:15px}.playerInfo .meta{font-size:12px}
+.draftTop{display:grid;grid-template-columns:1fr auto;align-items:center;text-align:left;gap:12px;margin-bottom:10px}
+.draftTop .pickTitle{font-size:34px}.draftTop h2{font-size:19px}.draftTop .sub{font-size:13px}
+.timer{position:static;min-width:110px;padding:8px 14px}.timer b{font-size:30px}
+.draftFormationMenu{grid-template-columns:repeat(2,minmax(0,1fr));max-height:52vh;overflow:auto;padding-right:4px}
+.draftFormationOption{padding:8px;font-size:11px}.draftFormationOption span{display:none}
+.bottomBar{display:none}
+.livePitch{height:min(62vh,540px);min-height:460px}
+.matchStage{grid-template-columns:260px 1fr 320px;gap:12px}
+.livePlayer{width:44px;height:32px;border-radius:50%;font-size:10px;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.livePlayer .role{font-size:7px}
+@media(max-width:1200px){.draftLayout{grid-template-columns:340px 1fr}.pitchPos{width:64px}.matchStage{grid-template-columns:1fr}.livePitch{height:480px}}
+
 </style>
 </head>
 <body>
@@ -1549,14 +1575,18 @@ originalCards.push(...expansionCardsV25);
 
 
 const formations = {
- "4-4-2":["GK","LD","ZC","ZC","LE","MD","MC","MC","ME","SA","CA"],
- "4-3-3":["GK","LD","ZC","ZC","LE","VOL","MC","MAT","PE","CA","PD"],
- "4-2-3-1":["GK","LD","ZC","ZC","LE","VOL","MC","MAT","PE","PD","CA"],
- "5-3-2":["GK","LD","ZC","ZC","ZC","LE","VOL","MC","MAT","SA","CA"],
- "3-5-2":["GK","ZC","ZC","ZC","MD","ME","VOL","MC","MAT","SA","CA"],
- "5-4-1":["GK","LD","ZC","ZC","ZC","LE","MD","MC","MC","ME","CA"],
- "4-3-1-2":["GK","LD","ZC","ZC","LE","VOL","MC","MC","MAT","SA","CA"],
- "4-4-1-1":["GK","LD","ZC","ZC","LE","MD","MC","MC","ME","SA","CA"]
+ "4-3-3":["GK","LD","ZC","ZC","LE","MC","VOL","MAT","PE","CA","PD"],
+ "4-4-2":["GK","LD","ZC","ZC","LE","ME","MC","VOL","MD","SA","CA"],
+ "4-1-3-2":["GK","LD","ZC","ZC","LE","VOL","ME","MAT","MD","SA","CA"],
+ "4-5-1":["GK","LD","ZC","ZC","LE","VOL","ME","MC","MAT","MD","CA"],
+ "3-5-2":["GK","ZC","ZC","ZC","ME","MC","MAT","VOL","MD","SA","CA"],
+ "4-1-2-3":["GK","LD","ZC","ZC","LE","VOL","MC","MAT","PE","CA","PD"],
+ "5-3-2":["GK","LD","ZC","ZC","ZC","LE","MC","MAT","VOL","SA","CA"],
+ "4-2-3-1":["GK","LD","ZC","ZC","LE","MC","VOL","ME","MAT","MD","CA"],
+ "4-3-1-2":["GK","LD","ZC","ZC","LE","MC","VOL","MAT","SA","CA"],
+ "3-4-3":["GK","ZC","ZC","ZC","ME","MC","VOL","MD","PE","CA","PD"],
+ "5-2-1-2":["GK","LD","ZC","ZC","ZC","LE","MC","VOL","MAT","SA","CA"],
+ "3-4-1-2":["GK","ZC","ZC","ZC","ME","MC","VOL","MD","MAT","SA","CA"]
 };
 const strategies=[{id:"def",name:"Retranca"},{id:"bal",name:"Equilibrado"},{id:"atk",name:"Ofensivo"},{id:"press",name:"Pressão Total"},{id:"counter",name:"Contra-Ataque"}];
 let selectedFormation="4-3-3", selectedDraftMode="manual", cards=[], teams=[], rand=Math.random, draftOrder=[], pickNo=1, draftIndex=0, currentOptions=[], selectedPick=null, pendingPick=null, draftTimerInt=null, roundTimerInt=null, preRoundInt=null, schedule=[], round=0, selectedStrategy="bal";
@@ -1796,14 +1826,18 @@ function choosePlayer(team,p,assignedPos){clearInterval(draftTimerInt);document.
 function botPick(team){const opts=generateOptions(team);if(!opts.length){finishDraft();return}let p=bestOptionForTeam(team,opts)||opts[0];let pos=autoAssignBotPosition(team,p);choosePlayer(team,p,pos)}
 function runAutoDraft(){while(pickNo<=teams.length*11){const team=teams[draftOrder[draftIndex]];const opts=generateOptions(team);if(!opts.length)break;let p=bestOptionForTeam(team,opts)||opts[0];let pos=autoAssignBotPosition(team,p);const real=cards.find(c=>c.num===p.num);if(real)real.taken=true;team.players.push({...p,assignedPos:pos});pickNo++;draftIndex++}}
 function formationCoords(f){const m={
-"4-3-3":[["GK",50,93],["LE",12,74],["ZC",37,76],["ZC",63,76],["LD",88,74],["VOL",50,58],["MC",32,43],["MAT",68,43],["PE",20,24],["CA",50,13],["PD",80,24]],
-"4-4-2":[["GK",50,93],["LE",12,74],["ZC",37,76],["ZC",63,76],["LD",88,74],["ME",22,43],["MC",42,50],["MC",58,50],["MD",78,43],["SA",38,16],["CA",62,16]],
-"4-2-3-1":[["GK",50,93],["LE",12,74],["ZC",37,76],["ZC",63,76],["LD",88,74],["VOL",37,57],["MC",63,57],["MAT",50,38],["PE",20,29],["PD",80,29],["CA",50,14]],
-"5-3-2":[["GK",50,93],["LE",10,74],["ZC",30,77],["ZC",50,79],["ZC",70,77],["LD",90,74],["VOL",50,57],["MC",32,40],["MAT",68,40],["SA",39,15],["CA",61,15]],
-"3-5-2":[["GK",50,93],["ZC",30,77],["ZC",50,80],["ZC",70,77],["ME",10,51],["MD",90,51],["VOL",38,58],["MC",62,47],["MAT",50,33],["SA",39,14],["CA",61,14]],
-"5-4-1":[["GK",50,93],["LE",10,74],["ZC",30,77],["ZC",50,79],["ZC",70,77],["LD",90,74],["ME",22,42],["MC",42,55],["MC",58,55],["MD",78,42],["CA",50,14]],
-"4-3-1-2":[["GK",50,93],["LE",12,74],["ZC",37,76],["ZC",63,76],["LD",88,74],["VOL",50,58],["MC",32,43],["MC",68,43],["MAT",50,31],["SA",39,14],["CA",61,14]],
-"4-4-1-1":[["GK",50,93],["LE",12,74],["ZC",37,76],["ZC",63,76],["LD",88,74],["ME",22,44],["MC",42,53],["MC",58,53],["MD",78,44],["SA",50,29],["CA",50,14]]
+"4-3-3":[["GK",50,92],["LE",13,75],["ZC",36,77],["ZC",64,77],["LD",87,75],["MC",31,56],["VOL",69,61],["MAT",50,41],["PE",19,23],["CA",50,13],["PD",81,23]],
+"4-4-2":[["GK",50,92],["LE",13,75],["ZC",36,77],["ZC",64,77],["LD",87,75],["ME",18,48],["MC",38,56],["VOL",62,60],["MD",82,48],["SA",39,18],["CA",61,18]],
+"4-1-3-2":[["GK",50,92],["LE",13,75],["ZC",36,77],["ZC",64,77],["LD",87,75],["VOL",50,62],["ME",20,43],["MAT",50,39],["MD",80,43],["SA",39,17],["CA",61,17]],
+"4-5-1":[["GK",50,92],["LE",13,75],["ZC",36,77],["ZC",64,77],["LD",87,75],["VOL",50,64],["ME",16,47],["MC",36,52],["MAT",50,39],["MD",84,47],["CA",50,14]],
+"3-5-2":[["GK",50,92],["ZC",28,77],["ZC",50,80],["ZC",72,77],["ME",12,50],["MC",34,57],["MAT",50,40],["VOL",66,61],["MD",88,50],["SA",39,16],["CA",61,16]],
+"4-1-2-3":[["GK",50,92],["LE",13,75],["ZC",36,77],["ZC",64,77],["LD",87,75],["VOL",50,64],["MC",35,49],["MAT",65,44],["PE",19,23],["CA",50,13],["PD",81,23]],
+"5-3-2":[["GK",50,92],["LE",10,75],["ZC",30,78],["ZC",50,80],["ZC",70,78],["LD",90,75],["MC",32,54],["MAT",50,39],["VOL",68,60],["SA",39,16],["CA",61,16]],
+"4-2-3-1":[["GK",50,92],["LE",13,75],["ZC",36,77],["ZC",64,77],["LD",87,75],["MC",37,62],["VOL",63,62],["ME",20,40],["MAT",50,37],["MD",80,40],["CA",50,14]],
+"4-3-1-2":[["GK",50,92],["LE",13,75],["ZC",36,77],["ZC",64,77],["LD",87,75],["MC",31,57],["VOL",69,61],["MAT",50,39],["SA",39,16],["CA",61,16]],
+"3-4-3":[["GK",50,92],["ZC",28,77],["ZC",50,80],["ZC",72,77],["ME",16,53],["MC",38,58],["VOL",62,62],["MD",84,53],["PE",19,23],["CA",50,13],["PD",81,23]],
+"5-2-1-2":[["GK",50,92],["LE",10,75],["ZC",30,78],["ZC",50,80],["ZC",70,78],["LD",90,75],["MC",38,59],["VOL",62,63],["MAT",50,40],["SA",39,16],["CA",61,16]],
+"3-4-1-2":[["GK",50,92],["ZC",28,77],["ZC",50,80],["ZC",72,77],["ME",16,54],["MC",38,59],["VOL",62,63],["MD",84,54],["MAT",50,40],["SA",39,16],["CA",61,16]]
 };return m[f]||m["4-3-3"]}
 function getOpenFormationSlots(team){let coords=formationCoords(team.formation), occupied=team.players.filter(p=>p.assignedPos&&p.assignedPos!=="RES").map(p=>p.assignedPos), used={};occupied.forEach(p=>used[p]=(used[p]||0)+1);let open=[], count={};coords.forEach(([pos,x,y],idx)=>{count[pos]=(count[pos]||0)+1;if((used[pos]||0)<count[pos])open.push({pos,x,y,idx})});return open}
 function autoAssignBotPosition(team,p){let slots=getOpenFormationSlots(team), comp=slots.filter(s=>s.pos===p.pos||sector(s.pos)===sector(p.pos));if(comp.length)return comp[Math.floor(rand()*comp.length)].pos;if(slots.length)return slots[Math.floor(rand()*slots.length)].pos;return"RES"}

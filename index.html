@@ -3855,3 +3855,146 @@ function renderMpPitch(){
 .mpFormBar{flex-wrap:wrap!important;}
 .mpFormBtn{font-size:10px!important;padding:4px 6px!important;}
 </style>
+
+<style>
+/* V49 - mini-card no campo do draft, pronto para futura foto/caricatura */
+.mpDraftField{height:520px!important;min-height:520px!important;}
+.mpPitchSlot.filled{
+  width:128px!important;
+  min-width:128px!important;
+  max-width:128px!important;
+  height:132px!important;
+  min-height:132px!important;
+  padding:0!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  background:linear-gradient(180deg,#19283b 0%,#08111d 72%)!important;
+  border:2px solid rgba(242,201,76,.9)!important;
+  box-shadow:0 12px 24px rgba(0,0,0,.45),0 0 16px rgba(242,201,76,.16)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+}
+.mpPitchSlot.filled .mpMiniPortrait{
+  height:58px;
+  display:grid;
+  place-items:center;
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.16),rgba(255,255,255,.04) 45%,rgba(0,0,0,.24) 78%);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  position:relative;
+}
+.mpPitchSlot.filled .mpMiniPortrait:before{
+  content:'';
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(180deg,#5d6876,#1d2734);
+  box-shadow:0 10px 18px rgba(0,0,0,.45);
+  opacity:.9;
+}
+.mpPitchSlot.filled .mpMiniPortrait:after{
+  content:'';
+  position:absolute;bottom:7px;width:56px;height:18px;border-radius:50% 50% 10px 10px;
+  background:linear-gradient(180deg,#3b4655,#111a27);
+  opacity:.85;
+}
+.mpPitchSlot.filled .mpMiniText{
+  padding:6px 5px 5px!important;
+  text-align:center!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important;
+  min-width:0!important;
+}
+.mpPitchSlot.filled b{
+  display:block!important;
+  color:#fff!important;
+  font-size:12px!important;
+  line-height:1.05!important;
+  max-width:118px!important;
+  height:25px!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+}
+.mpPitchSlot.filled small{
+  display:block!important;
+  color:#f2c94c!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  max-width:118px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+}
+.mpPitchSlot.filled em{
+  display:block!important;
+  color:#f2c94c!important;
+  font-style:normal!important;
+  font-size:10px!important;
+  line-height:1!important;
+  letter-spacing:-1px!important;
+  white-space:nowrap!important;
+}
+.mpPitchSlot:not(.filled){
+  width:68px!important;min-width:68px!important;max-width:68px!important;height:34px!important;min-height:34px!important;
+}
+.mpPitchSlot:not(.filled) b{font-size:13px!important;line-height:1!important;}
+@media(max-width:1400px){
+  .mpPitchSlot.filled{width:116px!important;min-width:116px!important;max-width:116px!important;height:122px!important;min-height:122px!important;}
+  .mpPitchSlot.filled .mpMiniPortrait{height:52px;}
+  .mpPitchSlot.filled b{font-size:11px!important;max-width:106px!important;height:23px!important;}
+  .mpPitchSlot.filled small,.mpPitchSlot.filled em{font-size:9px!important;}
+}
+</style>
+<script>
+/* V49 - renderiza jogadores escolhidos como mini-cards no campo */
+(function(){
+  function esc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[ch]||ch})}
+  function shortCardName(name){
+    const n=String(name||'').trim(); if(!n) return '';
+    const parts=n.split(/\s+/).filter(Boolean);
+    if(parts.length===1) return parts[0].slice(0,18);
+    const suffix=['Jr','Jr.','Junior','Neto','Filho'];
+    let first=parts[0], last=parts[parts.length-1];
+    if(suffix.includes(last) && parts.length>2) last=parts[parts.length-2]+' '+last;
+    let combo=first+' '+last;
+    if(combo.length<=19) return combo;
+    if(last.length<=18) return last;
+    return first.slice(0,18);
+  }
+  function ovOf(p){return p.effectiveOvr || p.ovr || '--'}
+  const F={
+    '4-3-3':[['GK',50,91],['LE',13,73],['ZC',35,77],['ZC',65,77],['LD',87,73],['MC',34,53],['VOL',66,58],['MAT',50,39],['PE',18,21],['CA',50,13],['PD',82,21]],
+    '4-4-2':[['GK',50,91],['LE',13,73],['ZC',35,77],['ZC',65,77],['LD',87,73],['ME',16,50],['MC',36,57],['MC',64,57],['MD',84,50],['CA',39,20],['SA',61,20]],
+    '4-1-3-2':[['GK',50,91],['LE',13,73],['ZC',35,77],['ZC',65,77],['LD',87,73],['VOL',50,64],['ME',18,46],['MAT',50,38],['MD',82,46],['CA',39,19],['SA',61,19]],
+    '4-5-1':[['GK',50,91],['LE',13,73],['ZC',35,77],['ZC',65,77],['LD',87,73],['VOL',50,65],['ME',13,50],['MC',33,56],['MAT',50,42],['MD',87,50],['CA',50,14]],
+    '3-5-2':[['GK',50,91],['ZC',27,77],['ZC',50,80],['ZC',73,77],['ME',13,53],['MC',33,59],['MAT',50,42],['VOL',67,62],['MD',87,53],['CA',39,19],['SA',61,19]],
+    '4-1-2-3':[['GK',50,91],['LE',13,73],['ZC',35,77],['ZC',65,77],['LD',87,73],['VOL',50,65],['MC',34,52],['MC',66,52],['PE',18,21],['CA',50,13],['PD',82,21]],
+    '5-3-2':[['GK',50,91],['LE',8,73],['ZC',28,77],['ZC',50,80],['ZC',72,77],['LD',92,73],['MC',32,58],['MAT',50,41],['VOL',68,61],['CA',39,19],['SA',61,19]],
+    '4-2-3-1':[['GK',50,91],['LE',13,73],['ZC',35,77],['ZC',65,77],['LD',87,73],['VOL',36,64],['MC',64,64],['ME',18,43],['MAT',50,37],['MD',82,43],['CA',50,13]],
+    '4-3-1-2':[['GK',50,91],['LE',13,73],['ZC',35,77],['ZC',65,77],['LD',87,73],['MC',30,60],['VOL',70,62],['MC',50,53],['MAT',50,37],['CA',39,19],['SA',61,19]],
+    '3-4-3':[['GK',50,91],['ZC',27,77],['ZC',50,80],['ZC',73,77],['ME',15,56],['MC',36,61],['VOL',64,61],['MD',85,56],['PE',18,21],['CA',50,13],['PD',82,21]],
+    '5-2-1-2':[['GK',50,91],['LE',8,73],['ZC',28,77],['ZC',50,80],['ZC',72,77],['LD',92,73],['MC',36,62],['VOL',64,62],['MAT',50,41],['CA',39,19],['SA',61,19]],
+    '3-4-1-2':[['GK',50,91],['ZC',27,77],['ZC',50,80],['ZC',73,77],['ME',15,56],['MC',36,62],['VOL',64,62],['MD',85,56],['MAT',50,41],['CA',39,19],['SA',61,19]]
+  };
+  window.mpFormationNeed=function(formation){return (F[String(formation||'4-3-3')]||F['4-3-3']).map(x=>x[0]);};
+  window.renderMpPitchV33=function(){
+    if(!window.mpCurrentDraft) return '';
+    const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[],formation:'4-3-3'};
+    const formation=myTeam.formation||'4-3-3';
+    const slots=F[formation]||F['4-3-3'];
+    const formBtns=Object.keys(F).map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
+    const players=(myTeam.players||[]).slice(); const used={};
+    return '<div class="mpFormBar"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField"><div class="mpCenterCircle"></div>'+slots.map((sl)=>{
+      const pos=sl[0], x=sl[1], y=sl[2];
+      const found=players.find((pl,j)=>!used[j] && mpNormPos(pl.assignedPos||pl.pos)===pos);
+      if(found) used[players.indexOf(found)]=true;
+      if(found){
+        const stars=found.fitStars || adaptationStars(found.pos,pos);
+        return '<div class="mpPitchSlot filled" style="left:'+x+'%;top:'+y+'%"><div class="mpMiniPortrait"></div><div class="mpMiniText"><b>'+esc(shortCardName(found.name))+'</b><small>'+esc(pos)+' • OV '+esc(ovOf(found))+'</small><em>'+starsHtml(stars)+'</em></div></div>';
+      }
+      return '<div class="mpPitchSlot" style="left:'+x+'%;top:'+y+'%"><b>'+esc(pos)+'</b></div>';
+    }).join('')+'</div>';
+  };
+})();
+</script>

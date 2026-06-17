@@ -1349,6 +1349,35 @@ html,body{overflow-x:hidden}
 @media(max-width:1200px){.draftLayout{grid-template-columns:340px 1fr}.pitchPos{width:64px}.matchStage{grid-template-columns:1fr}.livePitch{height:480px}}
 
 </style>
+
+<style id="v57-solid-field-cards">
+/* V57 - cards do campo sólidos, sem transparência, prontos para foto */
+.mpPitchSlot.filled{
+  width:138px!important; min-width:138px!important; max-width:138px!important;
+  height:194px!important; min-height:194px!important; max-height:194px!important;
+  padding:0!important; border:0!important; border-radius:18px!important;
+  background:#05090f url('assets/card-field.svg') center/100% 100% no-repeat!important;
+  opacity:1!important; filter:none!important;
+  box-shadow:0 28px 48px rgba(0,0,0,.78),0 0 28px rgba(242,201,76,.22)!important;
+  backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+  overflow:visible!important;
+}
+.mpPitchSlot.filled *{opacity:1!important;}
+.mpPitchSlot.filled .mpMiniPortrait{
+  display:block!important;width:84px!important;height:84px!important;margin:24px auto 7px!important;
+  background:url('assets/silhouette.svg') center/contain no-repeat!important;
+  opacity:.92!important;filter:drop-shadow(0 10px 15px rgba(0,0,0,.8))!important;
+}
+.mpPitchSlot.filled .mpMiniText{padding:0 12px!important; gap:2px!important;}
+.mpPitchSlot.filled b{
+  font-size:14px!important;line-height:1.05!important;max-width:116px!important;
+  color:#fff!important;text-align:center!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;
+  text-shadow:0 2px 7px #000!important;
+}
+.mpPitchSlot.filled small{font-size:13px!important;color:#59ff8a!important;font-weight:1000!important;margin-top:3px!important;}
+.mpPitchSlot.filled em{font-size:13px!important;color:#ffd85a!important;font-style:normal!important;font-weight:1000!important;margin-top:1px!important;letter-spacing:.5px!important;}
+.mpPitchSlot:not(.filled){opacity:1!important;background:#05090f!important;border:2px solid #d6b243!important;box-shadow:0 12px 20px rgba(0,0,0,.65)!important;}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -4329,79 +4358,3 @@ function renderMpPitch(){
   window.renderPickFeed=function(log){const items=(log||[]).slice().reverse();if(!items.length)return '<div class="mpFeedList"><p class="mpSub">Nenhum pick ainda.</p></div>';return '<div class="mpFeedList">'+items.map(l=>'<div class="mpFeedItem"><div class="mpFeedAvatar"></div><div><span>'+esc(l.club)+' escolheu</span><b>'+esc(nameShort(l.card.name))+'</b><em>'+esc(mpNormPos(l.card.assignedPos||l.card.pos))+' • '+esc(l.card.effectiveOvr||l.card.ovr||'')+'</em></div></div>').join('')+'</div>';};
 })();
 </script>
-
-<style id="v56-premium-pitch-from-upload">
-/* v56: campo real vindo da imagem enviada pelo Julio + cards sólidos */
-.mpDraftField{
-  background-image:
-    radial-gradient(circle at 50% 47%, rgba(255,255,255,.05), rgba(0,0,0,.10) 32%, rgba(0,0,0,.46) 100%),
-    url('assets/pitch-premium.png') !important;
-  background-size:100% 100%, 100% 100% !important;
-  background-position:center center !important;
-  background-repeat:no-repeat !important;
-  border:1px solid rgba(242,201,76,.35) !important;
-  box-shadow: inset 0 0 120px rgba(0,0,0,.70), 0 18px 44px rgba(0,0,0,.42) !important;
-  filter:saturate(.78) brightness(.78) contrast(1.06) !important;
-}
-.mpDraftField::before,.mpDraftField::after,.mpCenterCircle{display:none!important;}
-.mpPitchSlot.filled{
-  width:126px!important;
-  min-width:126px!important;
-  height:168px!important;
-  min-height:168px!important;
-  padding:0!important;
-  border:0!important;
-  border-radius:16px!important;
-  background:url('assets/card-field.svg') center/100% 100% no-repeat!important;
-  box-shadow:0 22px 36px rgba(0,0,0,.70),0 0 18px rgba(242,201,76,.24)!important;
-  opacity:1!important;
-  filter:none!important;
-  overflow:visible!important;
-  backdrop-filter:none!important;
-}
-.mpPitchSlot.filled::before,.mpPitchSlot.filled::after{display:none!important;}
-.mpPitchSlot.filled .mpMiniPortrait{
-  display:block!important;
-  width:76px!important;
-  height:76px!important;
-  margin:18px auto 7px!important;
-  background:url('assets/silhouette.svg') center/contain no-repeat!important;
-  opacity:1!important;
-  filter:drop-shadow(0 9px 14px rgba(0,0,0,.72))!important;
-}
-.mpPitchSlot.filled .mpMiniText{padding:0 10px!important;margin:0!important;position:relative!important;z-index:5!important;}
-.mpPitchSlot.filled b{
-  font-size:13px!important;
-  line-height:1.05!important;
-  color:#fff!important;
-  text-align:center!important;
-  text-shadow:0 2px 8px #000!important;
-  max-width:108px!important;
-  white-space:normal!important;
-  overflow:visible!important;
-  text-overflow:clip!important;
-}
-.mpPitchSlot.filled small{font-size:12px!important;color:#59ff8a!important;font-weight:1000!important;margin-top:5px!important;}
-.mpPitchSlot.filled em{font-size:12px!important;color:#f2c94c!important;font-style:normal!important;margin-top:3px!important;}
-.mpPitchSlot:not(.filled){
-  width:62px!important;
-  height:30px!important;
-  background:linear-gradient(180deg,#07111d,#02060b)!important;
-  border:2px solid rgba(242,201,76,.92)!important;
-  box-shadow:0 10px 18px rgba(0,0,0,.50)!important;
-  opacity:1!important;
-}
-.mpPitchSlot:not(.filled) b{color:#f2c94c!important;font-size:12px!important;}
-.mpCardV33{
-  background:url('assets/card-draft.svg') center/100% 100% no-repeat!important;
-  opacity:1!important;
-  filter:none!important;
-}
-.mpCardV33 .mpCardShadow{background:url('assets/silhouette.svg') center/contain no-repeat!important;opacity:1!important;}
-.mpFeedAvatar{background:url('assets/card-draft.svg') center/100% 100% no-repeat!important;opacity:1!important;}
-.mpFeedAvatar:before{background:url('assets/silhouette.svg') center/contain no-repeat!important;opacity:1!important;}
-@media(max-width:1500px){
-  .mpPitchSlot.filled{width:108px!important;height:148px!important;}
-  .mpPitchSlot.filled .mpMiniPortrait{width:58px!important;height:58px!important;margin-top:16px!important;}
-}
-</style>

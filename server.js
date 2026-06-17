@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
-const fs = require('fs');
 const { Server } = require('socket.io');
 
 const app = express();
@@ -17,73 +16,145 @@ const PICK_ROUNDS = 11;
 const BOT_PICK_DELAY_MS = 2000;
 const rooms = new Map();
 
+const fs = require('fs');
 
-function loadRealCardPool(){
-  try{
-    const html = fs.readFileSync(path.join(__dirname,'index.html'),'utf8');
-    const m = html.match(/const\s+originalCards\s*=\s*(\[[\s\S]*?\]);/);
-    if(!m) throw new Error('originalCards não encontrado');
-    const cards = JSON.parse(m[1]);
-    return cards
-      .filter(c => c && c.name && c.pos && Number.isFinite(Number(c.year)))
-      .map(c => ({
-        id: String(c.id || ''),
+function extractCardArrayFromHtml(html, varName){
+  const marker = `const ${varName} =`;
+  const start = html.indexOf(marker);
+  if(start < 0) return [];
+  const arrStart = html.indexOf('[', start);
+  const arrEnd = html.indexOf('];', arrStart);
+  if(arrStart < 0 || arrEnd < 0) return [];
+  try {
+    return JSON.parse(html.slice(arrStart, arrEnd + 1));
+  } catch (err) {
+    console.error(`Erro ao carregar ${varName}:`, err.message);
+    return [];
+  }
+}
+
+
+// v36: correção/validação da base histórica usada no multiplayer.
+// Regra: cada carta representa uma temporada realista da carreira; se vier ano fora da janela,
+// a carta é descartada para evitar casos como Suárez em 1959/1966 ou jogador de linha como GK.
+const CAREER_WINDOWS = {
+  'lionel messi':[2004,2025], 'messi':[2004,2025],
+  'cristiano ronaldo':[2002,2025], 'cristiano':[2002,2025],
+  'luis suarez':[2005,2025], 'luís suárez':[2005,2025], 'suarez':[2005,2025],
+  'neymar':[2009,2025], 'kylian mbappe':[2015,2025], 'mbappe':[2015,2025],
+  'erling haaland':[2016,2025], 'haaland':[2016,2025],
+  'robert lewandowski':[2008,2025], 'lewandowski':[2008,2025],
+  'luka modric':[2005,2025], 'modric':[2005,2025],
+  'xavi':[1998,2019], 'andres iniesta':[2002,2018], 'iniesta':[2002,2018],
+  'ronaldinho':[1998,2015], 'kaka':[2001,2017], 'kaká':[2001,2017],
+  'luis figo':[1989,2009], 'luís figo':[1989,2009], 'figo':[1989,2009],
+  'zico':[1971,1994], 'ronaldo nazario':[1993,2011], 'ronaldo fenômeno':[1993,2011],
+  'pele':[1956,1977], 'pelé':[1956,1977], 'maradona':[1976,1997],
+  'zidane':[1988,2006], 'maldini':[1985,2009], 'buffon':[1995,2023]
+};
+const POSITION_FIXES = {
+  'figo':'PD', 'luís figo':'PD', 'luis figo':'PD',
+  'zico':'MEI', 'luis suarez':'ATA', 'luís suárez':'ATA', 'suarez':'ATA',
+  'lionel messi':'SA', 'messi':'SA', 'cristiano ronaldo':'ATA', 'cristiano':'ATA',
+  'ronaldinho':'PE', 'xavi':'MC', 'iniesta':'MC', 'modric':'MC',
+  'maldini':'ZAG', 'buffon':'GK', 'dida':'GK'
+};
+function normText(v){ return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function cardKey(c){ return normText((c.fam || c.name || '')); }
+function findWindow(c){ const k=cardKey(c), n=normText(c.name); return CAREER_WINDOWS[k] || CAREER_WINDOWS[n] || null; }
+function fixClub(c){
+  const k=cardKey(c), y=Number(c.year);
+  if(k.includes('suarez')){
+    if(y===2014) c.club='Liverpool';
+    if(y>=2015 && y<=2020) c.club='Barcelona';
+    if(y===2021) c.club='Atlético Madrid';
+  }
+  if(k.includes('figo')){
+    if(y<=2000) c.club='Barcelona';
+    if(y>=2001 && y<=2005) c.club='Real Madrid';
+  }
+  if(k.includes('messi')){
+    if(y<=2021) c.club='Barcelona';
+    if(y===2022) c.club='Argentina';
+    if(y>=2023) c.club='Inter Miami';
+  }
+  if(k.includes('cristiano')){
+    if(y<=2009) c.club='Manchester United';
+    if(y>=2010 && y<=2018) c.club='Real Madrid';
+    if(y>=2019 && y<=2021) c.club='Juventus';
+  }
+  if(k.includes('zico') && y>=1971 && y<=1989) c.club='Flamengo';
+  return c;
+}
+function normalizeHistoricalCard(c){
+  const card={...c};
+  const y=Number(card.year);
+  if(!Number.isFinite(y) || y<1880 || y>2026) return null;
+  const win=findWindow(card);
+  if(win && (y<win[0] || y>win[1])) return null;
+  const k=cardKey(card), n=normText(card.name);
+  const fixedPos=POSITION_FIXES[k] || POSITION_FIXES[n];
+  if(fixedPos) card.pos=fixedPos;
+  if(card.pos==='GK' && fixedPos && fixedPos!=='GK') card.pos=fixedPos;
+  return fixClub(card);
+}
+
+function loadRealCards(){
+  try {
+    const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+    const base = extractCardArrayFromHtml(html, 'originalCards');
+    const expansion = extractCardArrayFromHtml(html, 'expansionCardsV25');
+    const cards = [...base, ...expansion]
+      .filter(c => c && c.name && c.pos && Number.isFinite(Number(c.year)) && Number.isFinite(Number(c.ovr)))
+      .map((c, idx) => normalizeHistoricalCard({
+        id: String(c.id || `REAL${idx}`),
         fam: c.fam || '',
         name: c.name,
         pos: c.pos,
         year: Number(c.year),
         club: c.club || 'Histórico',
-        ovr: Number(c.ovr || 80),
-        category: c.category || 'Histórico',
+        ovr: Number(c.ovr),
+        category: c.category || '',
         era: c.era || ''
-      }));
-  }catch(err){
-    console.warn('Aviso: usando base multiplayer reduzida. Falha ao carregar originalCards:', err.message);
-    return [];
+      }))
+      .filter(Boolean);
+    if(cards.length) return cards;
+  } catch (err) {
+    console.error('Erro ao ler base real do index.html:', err.message);
   }
+  return [
+    {id:'FALLBACK1',name:'Pelé',pos:'ATA',year:1970,club:'Santos',ovr:99},
+    {id:'FALLBACK2',name:'Lionel Messi',pos:'SA',year:2012,club:'Barcelona',ovr:99},
+    {id:'FALLBACK3',name:'Cristiano Ronaldo',pos:'PE',year:2017,club:'Real Madrid',ovr:98},
+    {id:'FALLBACK4',name:'Luis Suárez',pos:'ATA',year:2016,club:'Barcelona',ovr:95},
+    {id:'FALLBACK5',name:'Luís Figo',pos:'PD',year:2001,club:'Real Madrid',ovr:93},
+    {id:'FALLBACK6',name:'Zico',pos:'MEI',year:1981,club:'Flamengo',ovr:96},
+    {id:'FALLBACK7',name:'Gianluigi Buffon',pos:'GK',year:2006,club:'Juventus',ovr:96},
+    {id:'FALLBACK8',name:'Paolo Maldini',pos:'ZAG',year:1994,club:'Milan',ovr:97}
+  ];
 }
-const realCardPool = loadRealCardPool();
 
-const playerPool = [
- {name:'Pelé',pos:'ATA',base:98},{name:'Messi',pos:'PD',base:98},{name:'Diego Maradona',pos:'MAT',base:98},{name:'Cristiano Ronaldo',pos:'PE',base:97},{name:'Ronaldo',pos:'ATA',base:98},{name:'Ronaldinho',pos:'MAT',base:96},{name:'Zinedine Zidane',pos:'MAT',base:96},{name:'Johan Cruyff',pos:'SA',base:96},{name:'Neymar',pos:'PE',base:94},{name:'Kylian Mbappé',pos:'ATA',base:93},{name:'Thierry Henry',pos:'ATA',base:94},{name:'Romário',pos:'ATA',base:95},{name:'Marco van Basten',pos:'ATA',base:95},{name:'Roberto Baggio',pos:'SA',base:94},{name:'Francesco Totti',pos:'SA',base:93},{name:'Alessandro Del Piero',pos:'SA',base:93},{name:'Andrés Iniesta',pos:'MC',base:95},{name:'Xavi',pos:'MC',base:95},{name:'Luka Modric',pos:'MC',base:94},{name:'Kaká',pos:'MAT',base:94},{name:'Ruud Gullit',pos:'MC',base:94},{name:'Lothar Matthäus',pos:'VOL',base:94},{name:'Frank Rijkaard',pos:'VOL',base:93},{name:'Sergio Busquets',pos:'VOL',base:92},{name:'Andrea Pirlo',pos:'MC',base:93},{name:'Paolo Maldini',pos:'ZAG',base:96},{name:'Roberto Carlos',pos:'LE',base:94},{name:'Cafu',pos:'LD',base:94},{name:'Franz Beckenbauer',pos:'ZAG',base:96},{name:'Franco Baresi',pos:'ZAG',base:95},{name:'Alessandro Nesta',pos:'ZAG',base:94},{name:'Fabio Cannavaro',pos:'ZAG',base:94},{name:'Sergio Ramos',pos:'ZAG',base:93},{name:'Virgil van Dijk',pos:'ZAG',base:93},{name:'Manuel Neuer',pos:'GK',base:94},{name:'Gianluigi Buffon',pos:'GK',base:95},{name:'Iker Casillas',pos:'GK',base:94},{name:'Lev Yashin',pos:'GK',base:96},{name:'Erling Haaland',pos:'ATA',base:93},{name:'Karim Benzema',pos:'ATA',base:92},{name:'Robert Lewandowski',pos:'ATA',base:94},{name:'Luis Suárez',pos:'ATA',base:94},{name:'Mohamed Salah',pos:'PD',base:93},{name:'Garrincha',pos:'PD',base:95},{name:'George Best',pos:'PE',base:94},{name:'Rivaldo',pos:'MAT',base:94},{name:'Luís Figo',pos:'PD',base:94},{name:'Michel Platini',pos:'MAT',base:95},{name:'Zico',pos:'MAT',base:95},{name:'Sócrates',pos:'MC',base:92},{name:'Juan Román Riquelme',pos:'MAT',base:92},{name:'Clarence Seedorf',pos:'MC',base:91},{name:'Patrick Vieira',pos:'VOL',base:92},{name:'Claude Makelele',pos:'VOL',base:91},{name:'N’Golo Kanté',pos:'VOL',base:91},{name:'Edgar Davids',pos:'VOL',base:91},{name:'Javier Zanetti',pos:'LD',base:92},{name:'Philipp Lahm',pos:'LD',base:92},{name:'Marcelo',pos:'LE',base:91},{name:'Dani Alves',pos:'LD',base:92}
-];
+const realCards = loadRealCards();
+
 const formations = ['4-3-3','4-2-3-1','4-4-2','3-5-2','4-3-1-2'];
 function rnd(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function code8(){ let c; do { c=String(rnd(10000000,99999999)); } while(rooms.has(c)); return c; }
-function cloneRealCard(base, i){
- return { ...base, id:'MP'+Date.now()+'_'+i+'_'+Math.random().toString(16).slice(2), sourceId:base.id };
-}
 function makeCard(i){
- if(realCardPool.length){
-   const base = realCardPool[rnd(0, realCardPool.length-1)];
-   return cloneRealCard(base, i);
- }
- const p = playerPool[rnd(0,playerPool.length-1)];
- const realisticYears = {
-  'Pelé':[1958,1962,1965,1970,1973], 'Messi':[2009,2011,2012,2015,2022], 'Diego Maradona':[1981,1983,1986,1987,1990],
-  'Cristiano Ronaldo':[2008,2012,2014,2017,2021], 'Ronaldo':[1996,1997,1998,2002,2004], 'Ronaldinho':[2001,2003,2005,2006,2007],
-  'Luis Suárez':[2014,2015,2016,2017,2018,2019,2020], 'Robert Lewandowski':[2014,2015,2016,2017,2019,2020,2021,2022],
-  'Erling Haaland':[2022,2023,2024], 'Luís Figo':[1997,2000,2001,2002,2004], 'Zico':[1976,1979,1981,1982,1983]
- };
- const ys = realisticYears[p.name] || [1998,2002,2006,2010,2014,2018,2022];
- const year = ys[rnd(0,ys.length-1)];
- const ovr = Math.max(76, Math.min(99, p.base + rnd(-4,2)));
- return { id:'MP'+Date.now()+i+Math.random().toString(16).slice(2), name:p.name, pos:p.pos, year, club:'Histórico', ovr };
+  const p = realCards[rnd(0, realCards.length - 1)];
+  return {
+    id: 'MP' + Date.now() + i + Math.random().toString(16).slice(2),
+    sourceId: p.id,
+    fam: p.fam || '',
+    name: p.name,
+    pos: p.pos,
+    year: p.year,
+    club: p.club || 'Histórico',
+    ovr: p.ovr,
+    category: p.category || '',
+    era: p.era || ''
+  };
 }
-function makeOptions(n=10){
- if(realCardPool.length){
-   const used = new Set();
-   const out = [];
-   while(out.length<n && used.size<realCardPool.length){
-     const idx = rnd(0, realCardPool.length-1);
-     if(used.has(idx)) continue;
-     used.add(idx);
-     out.push(cloneRealCard(realCardPool[idx], out.length));
-   }
-   return out;
- }
- return Array.from({length:n},(_,i)=>makeCard(i));
-}
+function makeOptions(n=10){ return Array.from({length:n},(_,i)=>makeCard(i)); }
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
 function posSector(pos){ if(pos==='GK') return 'GK'; if(['ZAG','LD','LE','ALA'].includes(pos)) return 'DEF'; if(['VOL','MC','MAT'].includes(pos)) return 'MID'; return 'ATT'; }
 function countPositions(players){ return players.reduce((acc,p)=>{ const k=p.assignedPos||p.pos; acc[k]=(acc[k]||0)+1; return acc; },{}); }

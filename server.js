@@ -16,6 +16,28 @@ const PICK_ROUNDS = 11;
 const BOT_PICK_DELAY_MS = 2000;
 const rooms = new Map();
 
+function normPos(pos){ pos=String(pos||'').toUpperCase(); const map={MEI:'MAT',ZAG:'ZC',ATA:'CA',ALA:'MD'}; return map[pos]||pos; }
+function posSector(pos){ pos=normPos(pos); if(pos==='GK') return 'GK'; if(['ZC','LD','LE'].includes(pos)) return 'DEF'; if(['VOL','MC','MAT','MD','ME'].includes(pos)) return 'MID'; return 'ATT'; }
+const POSITION_ADAPTATION_MATRIX={
+ GK:{5:['GK'],4:[],3:[],2:['ZC'],1:['ALL_OTHER']},
+ ZC:{5:['ZC'],4:['LD','LE','VOL'],3:['MC','GK'],2:['ALL_OTHER'],1:[]},
+ LD:{5:['LD','MD'],4:['LE','ME'],3:['ZC','MC','PE','PD'],2:['VOL'],1:['ALL_OTHER']},
+ LE:{5:['LE','ME'],4:['LD','MD'],3:['ZC','MC','PE','PD','VOL'],2:['ALL_OTHER'],1:['GK']},
+ VOL:{5:['VOL'],4:['MC','ZC'],3:['MAT'],2:['ALL_OTHER'],1:['GK']},
+ MC:{5:['MC','MAT','VOL'],4:['MD','ME'],3:['PE','PD'],2:['ALL_OTHER'],1:['GK']},
+ MD:{5:['MD','PD','MAT'],4:['ME','PE','SA'],3:['LE','LD'],2:['ALL_OTHER'],1:['GK']},
+ ME:{5:['ME','PE','MAT'],4:['MD','PD','SA'],3:['LE','LD'],2:['ALL_OTHER'],1:['GK']},
+ MAT:{5:['MAT','MD','ME','SA'],4:['MC'],3:['CA','VOL'],2:['ALL_OTHER'],1:['GK']},
+ PD:{5:['PD','MD','SA'],4:['PE','ME','MAT'],3:['MC','CA','LD'],2:['ALL_OTHER'],1:['GK']},
+ PE:{5:['PE','ME','SA'],4:['PD','MD','MAT'],3:['MC','CA','LE'],2:['ALL_OTHER'],1:['GK']},
+ SA:{5:['SA','MAT','PD','PE'],4:['CA'],3:['MC'],2:['ALL_OTHER'],1:['GK']},
+ CA:{5:['CA'],4:['SA'],3:['PD','PE','MAT'],2:['ALL_OTHER'],1:['GK']}
+};
+const STAR_LOSS={5:0,4:3,3:6,2:15,1:25};
+function adaptationStars(natural,assigned){ natural=normPos(natural); assigned=normPos(assigned); const row=POSITION_ADAPTATION_MATRIX[natural]||{}; for(const st of [5,4,3,2,1]){ if((row[st]||[]).includes(assigned)) return st; } for(const st of [5,4,3,2,1]){ if((row[st]||[]).includes('ALL_OTHER')) return st; } return 2; }
+function positionPenalty(card,assigned){ return STAR_LOSS[adaptationStars(card.pos,assigned)]||0; }
+function effectiveOvr(card,assigned){ return Math.max(40, Number(card.ovr||70)-positionPenalty(card,assigned)); }
+
 const fs = require('fs');
 
 function extractCardArrayFromHtml(html, varName){
@@ -54,10 +76,10 @@ const CAREER_WINDOWS = {
 };
 const POSITION_FIXES = {
   'figo':'PD', 'luís figo':'PD', 'luis figo':'PD',
-  'zico':'MEI', 'luis suarez':'ATA', 'luís suárez':'ATA', 'suarez':'ATA',
-  'lionel messi':'SA', 'messi':'SA', 'cristiano ronaldo':'ATA', 'cristiano':'ATA',
+  'zico':'MAT', 'luis suarez':'CA', 'luís suárez':'CA', 'suarez':'CA',
+  'lionel messi':'SA', 'messi':'SA', 'cristiano ronaldo':'CA', 'cristiano':'CA',
   'ronaldinho':'PE', 'xavi':'MC', 'iniesta':'MC', 'modric':'MC',
-  'maldini':'ZAG', 'buffon':'GK', 'dida':'GK'
+  'maldini':'ZC', 'buffon':'GK', 'dida':'GK'
 };
 function normText(v){ return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
 function cardKey(c){ return normText((c.fam || c.name || '')); }
@@ -110,7 +132,7 @@ function loadRealCards(){
         id: String(c.id || `REAL${idx}`),
         fam: c.fam || '',
         name: c.name,
-        pos: c.pos,
+        pos: normPos(c.pos),
         year: Number(c.year),
         club: c.club || 'Histórico',
         ovr: Number(c.ovr),
@@ -123,14 +145,14 @@ function loadRealCards(){
     console.error('Erro ao ler base real do index.html:', err.message);
   }
   return [
-    {id:'FALLBACK1',name:'Pelé',pos:'ATA',year:1970,club:'Santos',ovr:99},
+    {id:'FALLBACK1',name:'Pelé',pos:'CA',year:1970,club:'Santos',ovr:99},
     {id:'FALLBACK2',name:'Lionel Messi',pos:'SA',year:2012,club:'Barcelona',ovr:99},
     {id:'FALLBACK3',name:'Cristiano Ronaldo',pos:'PE',year:2017,club:'Real Madrid',ovr:98},
-    {id:'FALLBACK4',name:'Luis Suárez',pos:'ATA',year:2016,club:'Barcelona',ovr:95},
+    {id:'FALLBACK4',name:'Luis Suárez',pos:'CA',year:2016,club:'Barcelona',ovr:95},
     {id:'FALLBACK5',name:'Luís Figo',pos:'PD',year:2001,club:'Real Madrid',ovr:93},
-    {id:'FALLBACK6',name:'Zico',pos:'MEI',year:1981,club:'Flamengo',ovr:96},
+    {id:'FALLBACK6',name:'Zico',pos:'MAT',year:1981,club:'Flamengo',ovr:96},
     {id:'FALLBACK7',name:'Gianluigi Buffon',pos:'GK',year:2006,club:'Juventus',ovr:96},
-    {id:'FALLBACK8',name:'Paolo Maldini',pos:'ZAG',year:1994,club:'Milan',ovr:97}
+    {id:'FALLBACK8',name:'Paolo Maldini',pos:'ZC',year:1994,club:'Milan',ovr:97}
   ];
 }
 
@@ -156,11 +178,10 @@ function makeCard(i){
 }
 function makeOptions(n=10){ return Array.from({length:n},(_,i)=>makeCard(i)); }
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
-function posSector(pos){ if(pos==='GK') return 'GK'; if(['ZAG','LD','LE','ALA'].includes(pos)) return 'DEF'; if(['VOL','MC','MAT'].includes(pos)) return 'MID'; return 'ATT'; }
-function countPositions(players){ return players.reduce((acc,p)=>{ const k=p.assignedPos||p.pos; acc[k]=(acc[k]||0)+1; return acc; },{}); }
-function openSlots(team){ const need=['GK','LD','ZAG','ZAG','LE','VOL','MC','MC','PE','ATA','PD']; const used=countPositions(team.players); return need.filter(pos=>{ used[pos]=used[pos]||0; const total=need.filter(x=>x===pos).length; return used[pos]++ < total; }); }
-function pickPosition(team, card){ const slots=openSlots(team); if(slots.includes(card.pos)) return card.pos; const sameSector=slots.find(p=>posSector(p)===posSector(card.pos)); return sameSector || slots[0] || card.pos; }
-function validAssignedPos(team, card, assignedPos){ const slots=openSlots(team); if(!assignedPos) return null; if(!slots.includes(assignedPos)) return null; if(assignedPos===card.pos || posSector(assignedPos)===posSector(card.pos)) return assignedPos; return null; }
+function countPositions(players){ return players.reduce((acc,p)=>{ const k=normPos(p.assignedPos||p.pos); acc[k]=(acc[k]||0)+1; return acc; },{}); }
+function openSlots(team){ const need=['GK','LD','ZC','ZC','LE','VOL','MC','MAT','PE','CA','PD']; const used=countPositions(team.players); return need.filter(pos=>{ used[pos]=used[pos]||0; const total=need.filter(x=>x===pos).length; return used[pos]++ < total; }); }
+function pickPosition(team, card){ card.pos=normPos(card.pos); const slots=openSlots(team); if(!slots.length) return card.pos; return [...slots].sort((a,b)=>positionPenalty(card,a)-positionPenalty(card,b))[0]; }
+function validAssignedPos(team, card, assignedPos){ const slots=openSlots(team); assignedPos=normPos(assignedPos); if(!assignedPos) return null; if(!slots.includes(assignedPos)) return null; return assignedPos; }
 function publicRoom(room){ return { code:room.code, hostId:room.hostId, phase:room.phase, maxPlayers:MAX_PLAYERS, players:room.players.map(p=>({id:p.id,club:p.club,ready:p.ready})), teams: room.teams?.map(t=>({id:t.id,club:t.club,human:t.human,players:t.players?.length||0})) || [] }; }
 function emitRoom(room){ io.to(room.code).emit('mp:roomState', publicRoom(room)); }
 function fillBots(room){ let n=1; room.teams = room.players.map(p=>({ id:p.id, club:p.club, human:true, socketId:p.id, formation:'4-3-3', players:[], stats:{P:0,V:0,E:0,D:0,GP:0,GC:0,PTS:0} })); while(room.teams.length<TOTAL_TEAMS){ room.teams.push({ id:'BOT'+n, club:'Bot '+n, human:false, formation:formations[rnd(0,formations.length-1)], players:[], stats:{P:0,V:0,E:0,D:0,GP:0,GC:0,PTS:0} }); n++; }
@@ -179,7 +200,7 @@ function advanceDraft(room){ if(!room.draft) return;
  io.to(room.code).emit('mp:draftState', { index:room.draft.index, total:room.draft.order.length, teamId:team.id, club:team.club, human:team.human, botDelayMs: team.human ? 0 : BOT_PICK_DELAY_MS, options: team.human ? room.draft.options : [], order:room.draft.baseOrder.map(i=>({id:room.teams[i].id,club:room.teams[i].club,human:room.teams[i].human})), pickLog:room.draft.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})) });
  if(!team.human){ setTimeout(()=>{ const pick=room.draft.options[rnd(0,room.draft.options.length-1)]; applyPick(room, team.id, pick.id); }, BOT_PICK_DELAY_MS); }
 }
-function applyPick(room, teamId, cardId, assignedPos){ const d=room.draft; if(!d) return false; const teamIdx=d.order[d.index]; const team=room.teams[teamIdx]; if(!team || team.id!==teamId) return false; if(team.human && !room.players.some(p=>p.id===teamId && !p.disconnected)) return false; const card=d.options.find(c=>c.id===cardId) || d.options[0]; if(!card) return false; card.assignedPos=validAssignedPos(team, card, assignedPos) || pickPosition(team, card); team.players.push(card); const log={club:team.club, teamId:team.id, card:{name:card.name,pos:card.pos,year:card.year,ovr:card.ovr,assignedPos:card.assignedPos}, pick:d.index+1, round:Math.floor(d.index/TOTAL_TEAMS)+1}; d.pickLog.push(log); io.to(room.code).emit('mp:pickMade',{ teamId:team.id, club:team.club, card, log, pickLog:d.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})), nextIndex:d.index+1, total:d.order.length }); d.index++; advanceDraft(room); return true; }
+function applyPick(room, teamId, cardId, assignedPos){ const d=room.draft; if(!d) return false; const teamIdx=d.order[d.index]; const team=room.teams[teamIdx]; if(!team || team.id!==teamId) return false; if(team.human && !room.players.some(p=>p.id===teamId && !p.disconnected)) return false; const card=d.options.find(c=>c.id===cardId) || d.options[0]; if(!card) return false; card.pos=normPos(card.pos); card.assignedPos=validAssignedPos(team, card, assignedPos) || pickPosition(team, card); card.fitStars=adaptationStars(card.pos,card.assignedPos); card.fitLoss=positionPenalty(card,card.assignedPos); card.effectiveOvr=effectiveOvr(card,card.assignedPos); team.players.push(card); const log={club:team.club, teamId:team.id, card:{name:card.name,pos:card.pos,year:card.year,ovr:card.ovr,effectiveOvr:card.effectiveOvr,fitStars:card.fitStars,assignedPos:card.assignedPos}, pick:d.index+1, round:Math.floor(d.index/TOTAL_TEAMS)+1}; d.pickLog.push(log); io.to(room.code).emit('mp:pickMade',{ teamId:team.id, club:team.club, card, log, pickLog:d.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})), nextIndex:d.index+1, total:d.order.length }); d.index++; advanceDraft(room); return true; }
 function startRound(room){ room.phase='match'; room.round=(room.round||0)+1; const shuffled=[...room.teams].sort(()=>Math.random()-.5); room.matches=[]; for(let i=0;i<shuffled.length;i+=2){ room.matches.push({ id:`R${room.round}M${i/2+1}`, home:shuffled[i], away:shuffled[i+1], minute:0, h:0, a:0, events:[], finished:false }); }
  room.players.forEach(p=>{ const match=room.matches.find(m=>m.home.id===p.id || m.away.id===p.id); if(match){ const s=io.sockets.sockets.get(p.id); if(s) s.join(room.code+':'+match.id); io.to(p.id).emit('mp:yourMatch',{ round:room.round, match:lightMatch(match) }); }});
  emitRoom(room);

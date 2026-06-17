@@ -3319,7 +3319,7 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
 </style>
 <div id="mpOverlay">
   <div class="mpBox">
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v39: ordem lateral ajustada, bots mostram cartas por 1s e picks sem flash.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v40: timer humano 20s, anti-repetição, último card por necessidade e jogo com campo.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
     <div id="mpHome" class="mpGrid" style="margin-top:18px">
       <div class="mpBox"><h2>Criar sala</h2><input id="mpClubCreate" class="mpInput" placeholder="Nome do clube" value="Campo Grande FC"><input id="mpPassCreate" class="mpInput" placeholder="Senha da sala"><button class="mpBtn" onclick="MP.createRoom()">Criar sala</button></div>
       <div class="mpBox"><h2>Entrar em sala</h2><input id="mpCodeJoin" class="mpInput" placeholder="Código de 8 dígitos"><input id="mpPassJoin" class="mpInput" placeholder="Senha"><input id="mpClubJoin" class="mpInput" placeholder="Nome do clube"><button class="mpBtn" onclick="MP.joinRoom()">Entrar</button></div>
@@ -3381,7 +3381,7 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
  let socket=null, roomCode=null, myId=null, mpCurrentDraft=null, mpPendingCard=null;
  function by(id){return document.getElementById(id)}
  function show(sec){['mpHome','mpLobby','mpDraft','mpMatch','mpStandings'].forEach(id=>by(id).style.display=id===sec?'block':'none')}
- function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{ /* sem flash: o histórico atualiza no próximo estado do draft */ }); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
+ function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{ /* sem flash: o histórico atualiza no próximo estado do draft */ }); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:matchTick',d=>{renderMatch(d.match)}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
  function renderRoom(r){ roomCode=r.code; by('mpRoomCode').textContent=r.code; by('mpPlayers').innerHTML=r.players.map((p,i)=>'<span class="mpPill">'+(i+1)+'. '+p.club+(p.id===r.hostId?' 👑':'')+'</span>').join(''); by('mpStartBtn').style.display=(myId===r.hostId && r.phase==='lobby')?'inline-block':'none'; if(r.phase==='lobby') show('mpLobby'); }
  function mpEsc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]})}
  function mpDraftCardHtml(c){
@@ -3423,7 +3423,6 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
      b.onclick=()=>{
        by('positionModal').style.display='none';
        ensureSocket().emit('mp:pick',{code:roomCode,cardId:card.id,assignedPos:pos});
-       by('mpOptions').innerHTML='<p class="mpSub">Escolha enviada. Aguardando servidor...</p>';
      };
      box.appendChild(b);
    });
@@ -3491,17 +3490,56 @@ function renderMpPitch(){
      : (!d.human
         ? '<div class="mpPickHeader">'+mpEsc(d.club)+' está escolhendo - 1s</div><div class="mpBotChoosing">Cartas que apareceram para o bot</div><div id="mpOptionsInner" class="mpCardGridV33">'+(d.options||[]).slice(0,10).map(c=>mpDraftCardHtmlV33(c,true)).join('')+'</div>'
         : '<div class="mpPickHeader">Aguardando escolha</div><div class="mpWaiting"><div><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">Esse player está escolhendo agora.</p></div></div>');
-   const main='<main class="mpDraftPanel mpMainPanel"><div class="mpTeamHeader"><div class="mpTeamTitle"><div class="mpShield">♙</div><div><h2>Seu Time</h2><p>4-3-3</p></div></div><div class="mpStatsMini"><div class="mpStatBox">Entrosamento<b>0</b></div><div class="mpStatBox">Elenco<b>--</b></div></div></div>'+renderMpPitchV33()+optionsHtml+'<div style="padding:12px 20px 16px"><div class="mpLog" style="height:auto"><b>Tempo para escolher</b> <span class="mpTitle" style="float:right">20s</span><div style="clear:both;height:8px;background:#162231;border-radius:99px;margin-top:10px"><div style="height:100%;width:55%;background:#f2c94c;border-radius:99px"></div></div></div></div></main>';
+   const main='<main class="mpDraftPanel mpMainPanel"><div class="mpTeamHeader"><div class="mpTeamTitle"><div class="mpShield">♙</div><div><h2>Seu Time</h2><p>4-3-3</p></div></div><div class="mpStatsMini"><div class="mpStatBox">Entrosamento<b>0</b></div><div class="mpStatBox">Elenco<b>--</b></div></div></div>'+renderMpPitchV33()+optionsHtml+'<div style="padding:12px 20px 16px"><div class="mpLog" style="height:auto"><b>Tempo para escolher</b> <span id="mpDraftTimerText" class="mpTitle" style="float:right">20s</span><div style="clear:both;height:8px;background:#162231;border-radius:99px;margin-top:10px"><div id="mpDraftTimerBar" style="height:100%;width:100%;background:#f2c94c;border-radius:99px"></div></div></div></div></main>';
    const feed='<aside class="mpDraftPanel"><div class="mpPanelHead">📋 Histórico do Draft</div>'+renderPickFeed(d.pickLog)+'</aside>';
    by('mpOptions').className='';
    by('mpOptions').innerHTML='<div class="mpTopLine"><div><h1>Ultimate Draft FC Online</h1><p class="mpSub">Rodada '+round+' • Pick '+(d.index+1)+' / '+d.total+' — Vez de: '+mpEsc(d.club)+(isMe?' — SUA VEZ':'')+'</p></div></div><div class="mpDraftShell">'+renderDraftOrder(d)+main+feed+'</div>';
+   startMpDraftTimer(d);
  }
- function renderMatch(m){ by('mpMatchTitle').textContent=m.home.club+' x '+m.away.club; by('mpScore').textContent=m.h+' x '+m.a; by('mpClock').textContent=m.minute+"'"; }
+ let mpDraftTimerInterval=null;
+ function startMpDraftTimer(d){
+   if(mpDraftTimerInterval) clearInterval(mpDraftTimerInterval);
+   const total=d.human?20000:1000;
+   const end=d.turnEndsAt||Date.now()+total;
+   const tick=()=>{
+     const left=Math.max(0,end-Date.now());
+     const sec=Math.ceil(left/1000);
+     const txt=by('mpDraftTimerText'), bar=by('mpDraftTimerBar');
+     if(txt) txt.textContent=sec+'s';
+     if(bar) bar.style.width=Math.max(0,Math.min(100,left/total*100))+'%';
+     if(left<=0 && mpDraftTimerInterval){ clearInterval(mpDraftTimerInterval); mpDraftTimerInterval=null; }
+   };
+   tick(); mpDraftTimerInterval=setInterval(tick,200);
+ }
+ function renderMatch(m){
+   by('mpMatchTitle').textContent=m.home.club+' x '+m.away.club; by('mpScore').textContent=m.h+' x '+m.a; by('mpClock').textContent=m.minute+"'";
+   let pitch=by('mpMatchPitch');
+   if(!pitch){ pitch=document.createElement('div'); pitch.id='mpMatchPitch'; pitch.className='mpMatchPitch'; by('mpScore').insertAdjacentElement('afterend',pitch); }
+   const ballX=10+(m.minute%80), ballY=45+Math.sin((m.minute||0)/6)*18;
+   pitch.innerHTML='<div class="mpMatchLine mid"></div><div class="mpMatchCircle"></div><div class="mpGoal left"></div><div class="mpGoal right"></div><div class="mpBall" style="left:'+ballX+'%;top:'+ballY+'%">⚽</div>'+
+     '<div class="mpTeamName left">'+mpEsc(m.home.club)+'</div><div class="mpTeamName right">'+mpEsc(m.away.club)+'</div>';
+ }
  function renderStandings(d){ show('mpStandings'); by('mpStandingsTable').innerHTML='<tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'+d.standings.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s.club+(s.human?' 👤':' 🤖')+'</td><td>'+s.PTS+'</td><td>'+s.P+'</td><td>'+s.V+'</td><td>'+s.E+'</td><td>'+s.D+'</td><td>'+(s.GP-s.GC)+'</td></tr>').join(''); }
  window.MP={ open(){ensureSocket();by('mpOverlay').classList.add('show');show('mpHome')}, close(){by('mpOverlay').classList.remove('show')}, createRoom(){ensureSocket().emit('mp:createRoom',{club:by('mpClubCreate').value,password:by('mpPassCreate').value})}, joinRoom(){roomCode=by('mpCodeJoin').value;ensureSocket().emit('mp:joinRoom',{code:roomCode,password:by('mpPassJoin').value,club:by('mpClubJoin').value})}, startDraft(){ensureSocket().emit('mp:startDraft',{code:roomCode})}, pick(id){ if(!mpCurrentDraft || mpCurrentDraft.teamId!==myId) return; const card=(mpCurrentDraft.options||[]).find(c=>c.id===id); if(card) mpOpenPositionModal(card); } };
  window.addEventListener('load',()=>{ const btn=document.createElement('button'); btn.className='startButton mpOnlineBtn'; btn.textContent='Jogar entre amigos (Online)'; btn.onclick=()=>MP.open(); const panel=document.querySelector('.setupPanel'); if(panel) panel.appendChild(btn); });
 })();
 </script>
 
+
+<style>
+/* V40 ajustes de impacto */
+.mpDraftShell{grid-template-columns:300px minmax(740px,1fr) 300px!important;}
+.mpDraftOrderList{height:650px!important;overflow-y:hidden!important;overflow-x:hidden!important;padding:6px 0!important;}
+.mpDraftOrderRow{grid-template-columns:28px minmax(0,1fr) 48px!important;min-height:28px!important;padding:4px 10px!important;font-size:15px!important;gap:6px!important;}
+.mpDraftOrderRow.active:after{right:-25px!important;font-size:28px!important;}
+.mpRoundBox{margin:8px 14px 12px!important;padding:11px!important;}
+.mpRoundBox b{font-size:17px!important;}
+.mpMatchPitch{height:310px;margin:18px 0;background:linear-gradient(135deg,#12401f,#092b16);border:1px solid rgba(216,180,79,.45);border-radius:16px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);}
+.mpMatchPitch:before{content:'';position:absolute;inset:24px 44px;border:2px solid rgba(255,255,255,.16);border-radius:8px;}
+.mpMatchLine.mid{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.16)}
+.mpMatchCircle{position:absolute;left:50%;top:50%;width:110px;height:110px;border:2px solid rgba(255,255,255,.16);border-radius:50%;transform:translate(-50%,-50%)}
+.mpGoal{position:absolute;top:34%;width:52px;height:96px;border:2px solid rgba(255,255,255,.16)}.mpGoal.left{left:44px;border-left:0}.mpGoal.right{right:44px;border-right:0}
+.mpBall{position:absolute;transform:translate(-50%,-50%);font-size:24px;filter:drop-shadow(0 0 8px rgba(255,255,255,.7));transition:.9s linear}.mpTeamName{position:absolute;top:12px;font-weight:900;color:#fff}.mpTeamName.left{left:24px}.mpTeamName.right{right:24px}
+</style>
 </body>
 </html>

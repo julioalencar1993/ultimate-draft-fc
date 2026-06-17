@@ -161,14 +161,13 @@ const realCards = loadRealCards();
 const formations = ['4-3-3','4-2-3-1','4-4-2','3-5-2','4-3-1-2'];
 function rnd(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function code8(){ let c; do { c=String(rnd(10000000,99999999)); } while(rooms.has(c)); return c; }
-function makeCard(i){
-  const p = realCards[rnd(0, realCards.length - 1)];
+function cloneCard(p,i){
   return {
     id: 'MP' + Date.now() + i + Math.random().toString(16).slice(2),
-    sourceId: p.id,
+    sourceId: String(p.id || ''),
     fam: p.fam || '',
     name: p.name,
-    pos: p.pos,
+    pos: normPos(p.pos),
     year: p.year,
     club: p.club || 'Histórico',
     ovr: p.ovr,
@@ -176,7 +175,44 @@ function makeCard(i){
     era: p.era || ''
   };
 }
-function makeOptions(n=10){ return Array.from({length:n},(_,i)=>makeCard(i)); }
+function playerIdentity(c){ return normText(c.fam || c.name); }
+function exactCardKey(c){ return String(c.sourceId || c.id || '') + '|' + normText(c.name) + '|' + String(c.year || ''); }
+function teamHasIdentity(team,c){ const id=playerIdentity(c); return (team.players||[]).some(p=>playerIdentity(p)===id); }
+function isCardAvailable(room,team,c){
+  const picked=room?.draft?.pickedExact || new Set();
+  if(picked.has(exactCardKey(c))) return false;
+  if(team && teamHasIdentity(team,c)) return false;
+  return true;
+}
+function randomAvailableCard(room,team,desiredPositions){
+  let pool = realCards.filter(c=>isCardAvailable(room,team,c));
+  if(desiredPositions && desiredPositions.length){
+    const wanted = new Set(desiredPositions.map(normPos));
+    const posPool = pool.filter(c=>wanted.has(normPos(c.pos)));
+    if(posPool.length) pool = posPool;
+  }
+  if(!pool.length) pool = realCards.slice();
+  return pool[rnd(0, pool.length-1)];
+}
+function makeOptions(room,team,n=10){
+  const opts=[]; const seen=new Set();
+  const slots=openSlots(team||{players:[]});
+  const add=(desired)=>{
+    for(let tries=0; tries<250; tries++){
+      const p=randomAvailableCard(room,team,desired);
+      const key=exactCardKey({sourceId:p.id,name:p.name,year:p.year});
+      const idkey=playerIdentity(p);
+      if(seen.has(key) || seen.has('ID:'+idkey)) continue;
+      seen.add(key); seen.add('ID:'+idkey); opts.push(cloneCard(p,opts.length)); return true;
+    }
+    return false;
+  };
+  while(opts.length<n-1) add(null);
+  // Último slot: tenta obrigatoriamente trazer uma posição aberta do time da vez.
+  add(slots);
+  while(opts.length<n) add(null);
+  return opts.slice(0,n);
+}
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
 function countPositions(players){ return players.reduce((acc,p)=>{ const k=normPos(p.assignedPos||p.pos); acc[k]=(acc[k]||0)+1; return acc; },{}); }
 function openSlots(team){ const need=['GK','LD','ZC','ZC','LE','VOL','MC','MAT','PE','CA','PD']; const used=countPositions(team.players); return need.filter(pos=>{ used[pos]=used[pos]||0; const total=need.filter(x=>x===pos).length; return used[pos]++ < total; }); }
@@ -190,17 +226,31 @@ function buildDraftOrder(room){
  const base=shuffle([...room.teams.keys()]);
  const order=[];
  for(let r=0;r<PICK_ROUNDS;r++){ order.push(...(r%2===0 ? base : [...base].reverse())); }
- room.draft={ order, baseOrder:base, index:0, options:[], pickLog:[] };
+ room.draft={ order, baseOrder:base, index:0, options:[], pickLog:[], pickedExact:new Set(), turnTimer:null, turnEndsAt:null };
 }
 function advanceDraft(room){ if(!room.draft) return;
  if(room.draft.index >= room.draft.order.length){ room.phase='readyRound'; emitRoom(room); io.to(room.code).emit('mp:draftDone', { teams:room.teams.map(t=>({id:t.id,club:t.club,human:t.human,players:t.players})) }); startRound(room); return; }
  const teamIdx = room.draft.order[room.draft.index];
  const team = room.teams[teamIdx];
- room.draft.options = makeOptions(10);
- io.to(room.code).emit('mp:draftState', { index:room.draft.index, total:room.draft.order.length, teamId:team.id, club:team.club, human:team.human, botDelayMs: team.human ? 0 : BOT_PICK_DELAY_MS, options: room.draft.options, order:room.draft.baseOrder.map(i=>({id:room.teams[i].id,club:room.teams[i].club,human:room.teams[i].human})), pickLog:room.draft.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})) });
- if(!team.human){ setTimeout(()=>{ const pick=room.draft.options[rnd(0,room.draft.options.length-1)]; applyPick(room, team.id, pick.id); }, BOT_PICK_DELAY_MS); }
+ if(room.draft.turnTimer){ clearTimeout(room.draft.turnTimer); room.draft.turnTimer=null; }
+ room.draft.options = makeOptions(room, team, 10);
+ const delay = team.human ? 20000 : BOT_PICK_DELAY_MS;
+ room.draft.turnEndsAt = Date.now() + delay;
+ io.to(room.code).emit('mp:draftState', { index:room.draft.index, total:room.draft.order.length, teamId:team.id, club:team.club, human:team.human, botDelayMs: team.human ? 0 : BOT_PICK_DELAY_MS, turnEndsAt:room.draft.turnEndsAt, options: room.draft.options, order:room.draft.baseOrder.map(i=>({id:room.teams[i].id,club:room.teams[i].club,human:room.teams[i].human})), pickLog:room.draft.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})) });
+ room.draft.turnTimer=setTimeout(()=>{ autoPick(room, team.id); }, delay);
 }
-function applyPick(room, teamId, cardId, assignedPos){ const d=room.draft; if(!d) return false; const teamIdx=d.order[d.index]; const team=room.teams[teamIdx]; if(!team || team.id!==teamId) return false; if(team.human && !room.players.some(p=>p.id===teamId && !p.disconnected)) return false; const card=d.options.find(c=>c.id===cardId) || d.options[0]; if(!card) return false; card.pos=normPos(card.pos); card.assignedPos=validAssignedPos(team, card, assignedPos) || pickPosition(team, card); card.fitStars=adaptationStars(card.pos,card.assignedPos); card.fitLoss=positionPenalty(card,card.assignedPos); card.effectiveOvr=effectiveOvr(card,card.assignedPos); team.players.push(card); const log={club:team.club, teamId:team.id, card:{name:card.name,pos:card.pos,year:card.year,ovr:card.ovr,effectiveOvr:card.effectiveOvr,fitStars:card.fitStars,assignedPos:card.assignedPos}, pick:d.index+1, round:Math.floor(d.index/TOTAL_TEAMS)+1}; d.pickLog.push(log); io.to(room.code).emit('mp:pickMade',{ teamId:team.id, club:team.club, card, log, pickLog:d.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})), nextIndex:d.index+1, total:d.order.length }); d.index++; advanceDraft(room); return true; }
+function autoPick(room, teamId){
+  const d=room.draft; if(!d || room.phase!=='draft') return false;
+  const team=room.teams[d.order[d.index]]; if(!team || team.id!==teamId) return false;
+  const slots=openSlots(team);
+  let pool=(d.options||[]).filter(c=>slots.includes(normPos(c.pos)));
+  if(!pool.length) pool=(d.options||[]).slice();
+  const pick=pool[rnd(0,Math.max(0,pool.length-1))];
+  if(!pick) return false;
+  const assigned=pickPosition(team,pick);
+  return applyPick(room, teamId, pick.id, assigned, true);
+}
+function applyPick(room, teamId, cardId, assignedPos, isAuto=false){ const d=room.draft; if(!d) return false; const teamIdx=d.order[d.index]; const team=room.teams[teamIdx]; if(!team || team.id!==teamId) return false; if(team.human && !isAuto && !room.players.some(p=>p.id===teamId && !p.disconnected)) return false; if(d.turnTimer){ clearTimeout(d.turnTimer); d.turnTimer=null; } const card=d.options.find(c=>c.id===cardId) || d.options[0]; if(!card) return false; if(teamHasIdentity(team,card)){ const alt=(d.options||[]).find(c=>!teamHasIdentity(team,c)); if(alt) Object.assign(card,alt); } card.pos=normPos(card.pos); card.assignedPos=validAssignedPos(team, card, assignedPos) || pickPosition(team, card); card.fitStars=adaptationStars(card.pos,card.assignedPos); card.fitLoss=positionPenalty(card,card.assignedPos); card.effectiveOvr=effectiveOvr(card,card.assignedPos); team.players.push(card); d.pickedExact.add(exactCardKey(card)); const log={club:team.club, teamId:team.id, card:{name:card.name,pos:card.pos,year:card.year,ovr:card.ovr,effectiveOvr:card.effectiveOvr,fitStars:card.fitStars,assignedPos:card.assignedPos}, pick:d.index+1, round:Math.floor(d.index/TOTAL_TEAMS)+1}; d.pickLog.push(log); io.to(room.code).emit('mp:pickMade',{ teamId:team.id, club:team.club, card, log, pickLog:d.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})), nextIndex:d.index+1, total:d.order.length }); d.index++; advanceDraft(room); return true; }
 function startRound(room){ room.phase='match'; room.round=(room.round||0)+1; const shuffled=[...room.teams].sort(()=>Math.random()-.5); room.matches=[]; for(let i=0;i<shuffled.length;i+=2){ room.matches.push({ id:`R${room.round}M${i/2+1}`, home:shuffled[i], away:shuffled[i+1], minute:0, h:0, a:0, events:[], finished:false }); }
  room.players.forEach(p=>{ const match=room.matches.find(m=>m.home.id===p.id || m.away.id===p.id); if(match){ const s=io.sockets.sockets.get(p.id); if(s) s.join(room.code+':'+match.id); io.to(p.id).emit('mp:yourMatch',{ round:room.round, match:lightMatch(match) }); }});
  emitRoom(room);
@@ -208,6 +258,7 @@ function startRound(room){ room.phase='match'; room.round=(room.round||0)+1; con
  room.timer=setInterval(()=>{ const minute=Math.min(90, Math.floor((Date.now()-start)/duration*90)); room.matches.forEach(m=>{ if(m.finished) return; m.minute=minute; if(Math.random()<0.055){ const side=Math.random()<0.5?'home':'away'; const team=side==='home'?m.home:m.away; const scorer=(team.players[rnd(0,Math.max(0,team.players.length-1))]||{name:'Jogador'}).name; if(side==='home') m.h++; else m.a++; const ev={minute, type:'goal', side, scorer, club:team.club, score:`${m.h} x ${m.a}`}; m.events.push(ev); io.to(room.code+':'+m.id).emit('mp:matchEvent',{ matchId:m.id, event:ev, match:lightMatch(m) }); }
  });
  io.to(room.code).emit('mp:roundClock',{ round:room.round, minute });
+ room.matches.forEach(m=>io.to(room.code+':'+m.id).emit('mp:matchTick',{ match:lightMatch(m) }));
  if(minute>=90){ clearInterval(room.timer); finishRound(room); }
  }, 1000);
 }

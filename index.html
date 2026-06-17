@@ -3319,7 +3319,7 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
 </style>
 <div id="mpOverlay">
   <div class="mpBox">
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v40: timer humano 20s, anti-repetição, último card por necessidade e jogo com campo.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v43: formação funcional, campo do draft corrigido e botões do jogo ajustados.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
     <div id="mpHome" class="mpGrid" style="margin-top:18px">
       <div class="mpBox"><h2>Criar sala</h2><input id="mpClubCreate" class="mpInput" placeholder="Nome do clube" value="Campo Grande FC"><input id="mpPassCreate" class="mpInput" placeholder="Senha da sala"><button class="mpBtn" onclick="MP.createRoom()">Criar sala</button></div>
       <div class="mpBox"><h2>Entrar em sala</h2><input id="mpCodeJoin" class="mpInput" placeholder="Código de 8 dígitos"><input id="mpPassJoin" class="mpInput" placeholder="Senha"><input id="mpClubJoin" class="mpInput" placeholder="Nome do clube"><button class="mpBtn" onclick="MP.joinRoom()">Entrar</button></div>
@@ -3395,12 +3395,24 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
      '<div class="cardFooterMini"><span class="miniPill">'+mpEsc(mpNormPos(c.pos))+'</span></div></div></div>';
  }
  function mpNormPos(pos){return normPos(pos)} function mpPosSector(pos){ pos=mpNormPos(pos); if(pos==='GK') return 'GK'; if(['ZC','LD','LE'].includes(pos)) return 'DEF'; if(['VOL','MC','MAT','MD','ME'].includes(pos)) return 'MID'; return 'ATT'; }
- function mpFormationNeed(){ return ['GK','LD','ZC','ZC','LE','VOL','MC','MAT','PE','CA','PD']; }
+ function mpFormationNeed(formation){
+   const f=String(formation||'4-3-3');
+   const map={
+     '4-3-3':['GK','LD','ZC','ZC','LE','VOL','MC','MAT','PE','CA','PD'],
+     '4-4-2':['GK','LD','ZC','ZC','LE','MD','MC','MC','ME','SA','CA'],
+     '4-1-3-2':['GK','LD','ZC','ZC','LE','VOL','MD','MAT','ME','SA','CA'],
+     '4-5-1':['GK','LD','ZC','ZC','LE','VOL','MC','MAT','MD','ME','CA'],
+     '3-5-2':['GK','ZC','ZC','ZC','VOL','MC','MAT','MD','ME','SA','CA'],
+     '4-1-2-3':['GK','LD','ZC','ZC','LE','VOL','MC','MC','PE','CA','PD'],
+     '5-3-2':['GK','LD','ZC','ZC','ZC','LE','VOL','MC','MAT','SA','CA']
+   };
+   return (map[f]||map['4-3-3']).slice();
+ }
  function mpFitStars(card,pos){return starsHtml(adaptationStars(card.pos,pos));}
  function mpPositionPenalty(card,pos){return positionPenalty({pos:card.pos,ovr:card.ovr},pos);}
 
  function mpOpenSlots(team){
-   const need=mpFormationNeed();
+   const need=mpFormationNeed(team&&team.formation);
    const used={};
    (team&&team.players?team.players:[]).forEach(p=>{ const k=mpNormPos(p.assignedPos||p.pos); used[k]=(used[k]||0)+1; });
    const countNeed={}; need.forEach(x=>countNeed[x]=(countNeed[x]||0)+1);
@@ -3430,9 +3442,10 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
  }
 function renderMpPitch(){
    if(!mpCurrentDraft) return '';
-   const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[]};
+   const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[],formation:'4-3-3'};
+   const formation=myTeam.formation||'4-3-3';
    const coords={GK:[50,88],LD:[82,68],ZC1:[62,72],ZC2:[38,72],LE:[18,68],VOL:[50,55],MC:[35,42],MAT:[65,42],PE:[22,24],CA:[50,18],PD:[78,24]};
-   const need=mpFormationNeed(); const occ={}; const totalNeed={}; need.forEach(x=>totalNeed[x]=(totalNeed[x]||0)+1);
+   const need=mpFormationNeed(formation); const occ={}; const totalNeed={}; need.forEach(x=>totalNeed[x]=(totalNeed[x]||0)+1);
    const slots=need.map(pos=>{occ[pos]=(occ[pos]||0)+1; return {pos,key:pos+(totalNeed[pos]>1?occ[pos]:'')};});
    const players=(myTeam.players||[]).slice(); const used={};
    return '<div class="sideFormation"><h3>Seu Campo</h3><div class="pitch">'+slots.map((sl,i)=>{
@@ -3467,7 +3480,7 @@ function renderMpPitch(){
      VOL:[50,58],MC1:[36,45],MC2:[64,45],MC:[50,45],MAT:[50,34],MD:[78,43],ME:[22,43],
      PE:[20,22],CA:[50,18],SA:[50,27],PD:[80,22]
    };
-   const need=mpFormationNeed(); const occ={}; const totalNeed={}; need.forEach(x=>totalNeed[x]=(totalNeed[x]||0)+1);
+   const need=mpFormationNeed(formation); const occ={}; const totalNeed={}; need.forEach(x=>totalNeed[x]=(totalNeed[x]||0)+1);
    const slots=need.map(pos=>{occ[pos]=(occ[pos]||0)+1; let key=pos; if(pos==='ZC'&&totalNeed[pos]>1) key='ZC'+occ[pos]; if(pos==='MC'&&totalNeed[pos]>1) key='MC'+occ[pos]; return {pos,key};});
    const players=(myTeam.players||[]).slice(); const used={};
    const formBtns=['4-3-3','4-4-2','4-1-3-2','4-5-1','3-5-2','4-1-2-3','5-3-2'].map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
@@ -3476,8 +3489,8 @@ function renderMpPitch(){
      if(p){ const idx=players.indexOf(p); used[idx]=true; }
      const xy=coords[sl.key]||coords[sl.pos]||[50,50];
      const label=p?mpEsc(shortName(p.name)):mpEsc(sl.pos);
-     const sub=p?mpEsc(sl.pos)+' • '+starsHtml(p.fitStars||adaptationStars(p.pos,sl.pos)):mpEsc(sl.pos);
-     return '<div class="mpPitchSlot '+(p?'filled':'')+'" style="left:'+xy[0]+'%;top:'+xy[1]+'%"><b>'+label+'</b><small>'+sub+'</small></div>';
+     const sub=p?(mpEsc(sl.pos)+' • '+starsHtml(p.fitStars||adaptationStars(p.pos,sl.pos))):'';
+     return '<div class="mpPitchSlot '+(p?'filled':'')+'" style="left:'+xy[0]+'%;top:'+xy[1]+'%"><b>'+label+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
    }).join('')+'</div>';
  }
  function shortName(name){
@@ -3504,7 +3517,8 @@ function renderMpPitch(){
      : (!d.human
         ? '<div class="mpPickHeader">'+mpEsc(d.club)+' está escolhendo - 1s</div><div class="mpBotChoosing">Cartas que apareceram para o bot</div><div id="mpOptionsInner" class="mpCardGridV33">'+(d.options||[]).slice(0,10).map(c=>mpDraftCardHtmlV33(c,true)).join('')+'</div>'
         : '<div class="mpPickHeader">Aguardando escolha</div><div class="mpWaiting"><div><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">Esse player está escolhendo agora.</p></div></div>');
-   const main='<main class="mpDraftPanel mpMainPanel"><div class="mpTeamHeader"><div class="mpTeamTitle"><div class="mpShield">♙</div><div><h2>Seu Time</h2><p>4-3-3</p></div></div><div class="mpStatsMini"><div class="mpStatBox">Entrosamento<b>0</b></div><div class="mpStatBox">Elenco<b>--</b></div></div></div>'+renderMpPitchV33()+optionsHtml+'<div style="padding:12px 20px 16px"><div class="mpLog" style="height:auto"><b>Tempo para escolher</b> <span id="mpDraftTimerText" class="mpTitle" style="float:right">20s</span><div style="clear:both;height:8px;background:#162231;border-radius:99px;margin-top:10px"><div id="mpDraftTimerBar" style="height:100%;width:100%;background:#f2c94c;border-radius:99px"></div></div></div></div></main>';
+   const myTeamHeader=(d.teams||[]).find(t=>t.id===myId)||{formation:'4-3-3',count:0};
+   const main='<main class="mpDraftPanel mpMainPanel"><div class="mpTeamHeader"><div class="mpTeamTitle"><div class="mpShield">♙</div><div><h2>Seu Time</h2><p>'+mpEsc(myTeamHeader.formation||'4-3-3')+'</p></div></div><div class="mpStatsMini"><div class="mpStatBox">Entrosamento<b>0</b></div><div class="mpStatBox">Elenco<b>'+mpEsc(myTeamHeader.count||0)+'/11</b></div></div></div>'+renderMpPitchV33()+optionsHtml+'<div style="padding:8px 20px 12px"><div class="mpLog" style="height:auto"><b>Tempo para escolher</b> <span id="mpDraftTimerText" class="mpTitle" style="float:right">20s</span><div style="clear:both;height:8px;background:#162231;border-radius:99px;margin-top:10px"><div id="mpDraftTimerBar" style="height:100%;width:100%;background:#f2c94c;border-radius:99px"></div></div></div></div></main>';
    const feed='<aside class="mpDraftPanel"><div class="mpPanelHead">📋 Histórico do Draft</div>'+renderPickFeed(d.pickLog)+'</aside>';
    by('mpOptions').className='';
    by('mpOptions').innerHTML='<div class="mpTopLine"><div><h1>Ultimate Draft FC Online</h1><p class="mpSub">Rodada '+round+' • Pick '+(d.index+1)+' / '+d.total+' — Vez de: '+mpEsc(d.club)+(isMe?' — SUA VEZ':'')+'</p></div></div><div class="mpDraftShell">'+renderDraftOrder(d)+main+feed+'</div>';
@@ -3630,5 +3644,17 @@ function renderMpPitch(){
 @media(max-width:1200px){#mpOverlay>.mpBox{height:auto;overflow:auto!important}.mpDraftShell{height:auto;grid-template-columns:1fr!important}.mpDraftField{height:320px!important}.mpRosterGrid{grid-template-columns:1fr}.mpMatchPitch.soloLike{height:360px!important}}
 </style>
 
+
+<style>
+/* V43 - campo do draft limpo e formação funcional */
+.mpPitchSlot:not(.filled) small{display:none!important}
+.mpPitchSlot:not(.filled){min-width:70px!important;min-height:34px!important}
+.mpPitchSlot:not(.filled) b{font-size:13px!important;letter-spacing:.4px}
+.mpDraftField{height:330px!important}
+.mpFormBtn{cursor:pointer!important}
+.mpFormBtn:hover{transform:translateY(-1px);border-color:rgba(216,180,79,.7)!important}
+.mpCardGridV33{padding-bottom:8px!important}
+#mpOptions{overflow:hidden!important}
+</style>
 </body>
 </html>

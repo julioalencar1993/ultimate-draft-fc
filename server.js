@@ -290,10 +290,19 @@ io.on('connection', socket=>{
    if(!team || !team.human) return;
    if(!formations.includes(String(formation||''))) return;
    team.formation=String(formation);
-   // Reorganiza os jogadores já escolhidos da forma mais próxima possível na nova formação.
+   // Reorganiza os jogadores já escolhidos na nova formação sem contar posição antiga.
    const players=team.players||[];
-   players.forEach(p=>{ p.assignedPos=null; });
-   players.forEach(p=>{ p.assignedPos=pickPosition(team,p); p.fitStars=adaptationStars(p.pos,p.assignedPos); p.fitLoss=positionPenalty(p,p.assignedPos); p.effectiveOvr=effectiveOvr(p,p.assignedPos); });
+   const reassigned=[];
+   players.forEach(p=>{
+     p.assignedPos=null;
+     const tempTeam={...team, players:reassigned};
+     const pos=pickPosition(tempTeam,p);
+     p.assignedPos=pos;
+     p.fitStars=adaptationStars(p.pos,p.assignedPos);
+     p.fitLoss=positionPenalty(p,p.assignedPos);
+     p.effectiveOvr=effectiveOvr(p,p.assignedPos);
+     reassigned.push(p);
+   });
    if(room.phase==='draft' && room.draft){
      const d=room.draft;
      const cur=room.teams[d.order[d.index]];

@@ -3319,7 +3319,7 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
 </style>
 <div id="mpOverlay">
   <div class="mpBox">
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v41: campo estilo jogo de botão, formações no draft, timer no topo e painéis durante jogos.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1 class="mpTitle">Ultimate Draft FC Online</h1><p class="mpSub">Multiplayer v40: timer humano 20s, anti-repetição, último card por necessidade e jogo com campo.</p></div><button class="mpBtn secondary" onclick="MP.close()">Voltar ao solo</button></div>
     <div id="mpHome" class="mpGrid" style="margin-top:18px">
       <div class="mpBox"><h2>Criar sala</h2><input id="mpClubCreate" class="mpInput" placeholder="Nome do clube" value="Campo Grande FC"><input id="mpPassCreate" class="mpInput" placeholder="Senha da sala"><button class="mpBtn" onclick="MP.createRoom()">Criar sala</button></div>
       <div class="mpBox"><h2>Entrar em sala</h2><input id="mpCodeJoin" class="mpInput" placeholder="Código de 8 dígitos"><input id="mpPassJoin" class="mpInput" placeholder="Senha"><input id="mpClubJoin" class="mpInput" placeholder="Nome do clube"><button class="mpBtn" onclick="MP.joinRoom()">Entrar</button></div>
@@ -3378,10 +3378,10 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
 <script src="/socket.io/socket.io.js"></script>
 <script>
 (function(){
- let socket=null, roomCode=null, myId=null, mpCurrentDraft=null, mpPendingCard=null;
+ let socket=null, roomCode=null, myId=null, mpCurrentDraft=null, mpPendingCard=null, mpCurrentMatch=null, mpLatestStandings=null, mpLatestTeams=[];
  function by(id){return document.getElementById(id)}
  function show(sec){['mpHome','mpLobby','mpDraft','mpMatch','mpStandings'].forEach(id=>by(id).style.display=id===sec?'block':'none')}
- function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{ /* sem flash: o histórico atualiza no próximo estado do draft */ }); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{renderMatch(d.match); const log=by('mpMatchLog'); log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:matchTick',d=>{renderMatch(d.match)}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',renderStandings); return socket; }
+ function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{ /* sem flash: o histórico atualiza no próximo estado do draft */ }); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); mpCurrentMatch=d.match; renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{mpCurrentMatch=d.match; renderMatch(d.match); const log=by('mpMatchLog'); const assist=d.event.assist?' 👟 '+d.event.assist:''; log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+assist+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:matchTick',d=>{mpCurrentMatch=d.match; renderMatch(d.match)}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',d=>{mpLatestStandings=d.standings||[]; renderStandings(d)}); return socket; }
  function renderRoom(r){ roomCode=r.code; by('mpRoomCode').textContent=r.code; by('mpPlayers').innerHTML=r.players.map((p,i)=>'<span class="mpPill">'+(i+1)+'. '+p.club+(p.id===r.hostId?' 👑':'')+'</span>').join(''); by('mpStartBtn').style.display=(myId===r.hostId && r.phase==='lobby')?'inline-block':'none'; if(r.phase==='lobby') show('mpLobby'); }
  function mpEsc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]})}
  function mpDraftCardHtml(c){
@@ -3395,23 +3395,12 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
      '<div class="cardFooterMini"><span class="miniPill">'+mpEsc(mpNormPos(c.pos))+'</span></div></div></div>';
  }
  function mpNormPos(pos){return normPos(pos)} function mpPosSector(pos){ pos=mpNormPos(pos); if(pos==='GK') return 'GK'; if(['ZC','LD','LE'].includes(pos)) return 'DEF'; if(['VOL','MC','MAT','MD','ME'].includes(pos)) return 'MID'; return 'ATT'; }
- const MP_FORMATIONS={
-   '4-3-3':['GK','LD','ZC','ZC','LE','VOL','MC','MAT','PE','CA','PD'],
-   '4-4-2':['GK','LD','ZC','ZC','LE','MD','MC','MC','ME','SA','CA'],
-   '4-1-3-2':['GK','LD','ZC','ZC','LE','VOL','MD','MAT','ME','SA','CA'],
-   '4-5-1':['GK','LD','ZC','ZC','LE','VOL','MC','MAT','MD','ME','CA'],
-   '3-5-2':['GK','ZC','ZC','ZC','VOL','MC','MAT','MD','ME','SA','CA'],
-   '4-1-2-3':['GK','LD','ZC','ZC','LE','VOL','MC','MC','PE','CA','PD'],
-   '5-3-2':['GK','LD','ZC','ZC','ZC','LE','VOL','MC','MAT','SA','CA']
- };
- function mpMyTeam(){ return (mpCurrentDraft&&mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[],formation:'4-3-3'}; }
- function mpFormationNeed(team){ const f=(team&&team.formation) || mpMyTeam().formation || '4-3-3'; return (MP_FORMATIONS[f]||MP_FORMATIONS['4-3-3']).slice(); }
- function mpFormBtns(current){ return Object.keys(MP_FORMATIONS).map(f=>'<button class="mpFormBtn '+(f===current?'sel':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join(''); }
+ function mpFormationNeed(){ return ['GK','LD','ZC','ZC','LE','VOL','MC','MAT','PE','CA','PD']; }
  function mpFitStars(card,pos){return starsHtml(adaptationStars(card.pos,pos));}
  function mpPositionPenalty(card,pos){return positionPenalty({pos:card.pos,ovr:card.ovr},pos);}
 
  function mpOpenSlots(team){
-   const need=mpFormationNeed(team);
+   const need=mpFormationNeed();
    const used={};
    (team&&team.players?team.players:[]).forEach(p=>{ const k=mpNormPos(p.assignedPos||p.pos); used[k]=(used[k]||0)+1; });
    const countNeed={}; need.forEach(x=>countNeed[x]=(countNeed[x]||0)+1);
@@ -3469,34 +3458,32 @@ function renderMpPitch(){
      return '<div class="mpDraftOrderRow'+active+'"><span class="num">'+(i+1)+'</span><span class="club">'+mpEsc(t.club)+'</span><span class="count">'+(t.count||0)+'/11</span></div>';
    }).join('')+'</div><div class="mpRoundBox"><b>Rodada '+round+' / 11</b><span>Serpente: '+dir+'</span></div></aside>';
  }
- function mpFormationSlotCoords(form){
-   const slots=mpFormationNeed({formation:form});
-   const rows={GK:90, DEF:73, VOL:58, MID:43, AM:31, ATT:18};
-   const sectorOf=p=>p==='GK'?'GK':(['LD','LE','ZC'].includes(p)?'DEF':(p==='VOL'?'VOL':(['MC','MD','ME'].includes(p)?'MID':(p==='MAT'?'AM':'ATT'))));
-   const grouped={GK:[],DEF:[],VOL:[],MID:[],AM:[],ATT:[]};
-   slots.forEach((p,i)=>grouped[sectorOf(p)].push({pos:p,idx:i}));
-   const xByPos={LE:18,LD:82,ME:20,MD:80,PE:18,PD:82,ZC:50,MC:50,VOL:50,MAT:50,SA:42,CA:58,GK:50};
-   const out=[];
-   Object.keys(grouped).forEach(sec=>{
-     const arr=grouped[sec];
-     if(!arr.length) return;
-     if(arr.length===1){ out.push({...arr[0],x:xByPos[arr[0].pos]||50,y:rows[sec]}); return; }
-     const step=64/(arr.length-1);
-     arr.forEach((it,n)=>{ let x=18+n*step; if(['LE','ME','PE'].includes(it.pos)) x=15; if(['LD','MD','PD'].includes(it.pos)) x=85; out.push({...it,x,y:rows[sec]}); });
-   });
-   return out;
- }
- function mpInitials(name){ return String(name||'?').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase(); }
  function renderMpPitchV33(){
    if(!mpCurrentDraft) return '';
-   const myTeam=mpMyTeam();
-   const slots=mpFormationSlotCoords(myTeam.formation||'4-3-3');
+   const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[],formation:'4-3-3'};
+   const formation=myTeam.formation||'4-3-3';
+   const coords={
+     GK:[50,90],LD:[82,72],ZC1:[62,74],ZC2:[38,74],ZC3:[50,72],LE:[18,72],
+     VOL:[50,58],MC1:[36,45],MC2:[64,45],MC:[50,45],MAT:[50,34],MD:[78,43],ME:[22,43],
+     PE:[20,22],CA:[50,18],SA:[50,27],PD:[80,22]
+   };
+   const need=mpFormationNeed(); const occ={}; const totalNeed={}; need.forEach(x=>totalNeed[x]=(totalNeed[x]||0)+1);
+   const slots=need.map(pos=>{occ[pos]=(occ[pos]||0)+1; let key=pos; if(pos==='ZC'&&totalNeed[pos]>1) key='ZC'+occ[pos]; if(pos==='MC'&&totalNeed[pos]>1) key='MC'+occ[pos]; return {pos,key};});
    const players=(myTeam.players||[]).slice(); const used={};
-   return '<div class="mpFieldWrap"><div class="mpCenterCircle"></div>'+slots.map((sl,i)=>{
+   const formBtns=['4-3-3','4-4-2','4-1-3-2','4-5-1','3-5-2','4-1-2-3','5-3-2'].map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
+   return '<div class="mpFormBar"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField"><div class="mpCenterCircle"></div>'+slots.map((sl,i)=>{
      const p=players.find((x,j)=>!used[j] && mpNormPos(x.assignedPos||x.pos)===sl.pos);
      if(p){ const idx=players.indexOf(p); used[idx]=true; }
-     return '<div class="mpPitchSlot '+(p?'filled':'')+'" style="left:'+sl.x+'%;top:'+sl.y+'%">'+(p?'<div class="btnPlayer"><b>'+mpEsc(mpInitials(p.name))+'</b><small>'+mpEsc(sl.pos)+'</small></div>':'<span>'+mpEsc(sl.pos)+'</span>')+'</div>';
+     const xy=coords[sl.key]||coords[sl.pos]||[50,50];
+     const label=p?mpEsc(shortName(p.name)):mpEsc(sl.pos);
+     const sub=p?mpEsc(sl.pos)+' • '+starsHtml(p.fitStars||adaptationStars(p.pos,sl.pos)):mpEsc(sl.pos);
+     return '<div class="mpPitchSlot '+(p?'filled':'')+'" style="left:'+xy[0]+'%;top:'+xy[1]+'%"><b>'+label+'</b><small>'+sub+'</small></div>';
    }).join('')+'</div>';
+ }
+ function shortName(name){
+   const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+   if(parts.length<=2) return parts.join(' ');
+   return parts[0]+' '+parts[parts.length-1];
  }
  function mpDraftCardHtmlV33(c,readonly=false){
    const kit=(typeof kitForPlayer==='function')?kitForPlayer(c):'👕';
@@ -3505,10 +3492,10 @@ function renderMpPitch(){
  }
  function renderDraft(d){
    mpCurrentDraft=d;
+   mpLatestTeams=d.teams||[];
    show('mpDraft');
    const isMe=d.teamId===myId;
    const round=Math.floor(d.index/20)+1;
-   const myTeam=mpMyTeam();
    by('mpDraftTitle').textContent='';
    by('mpDraftSub').textContent='';
    by('mpDraftTeams').innerHTML='';
@@ -3517,8 +3504,7 @@ function renderMpPitch(){
      : (!d.human
         ? '<div class="mpPickHeader">'+mpEsc(d.club)+' está escolhendo - 1s</div><div class="mpBotChoosing">Cartas que apareceram para o bot</div><div id="mpOptionsInner" class="mpCardGridV33">'+(d.options||[]).slice(0,10).map(c=>mpDraftCardHtmlV33(c,true)).join('')+'</div>'
         : '<div class="mpPickHeader">Aguardando escolha</div><div class="mpWaiting"><div><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">Esse player está escolhendo agora.</p></div></div>');
-   const header='<div class="mpTeamHeader v41"><div class="mpTeamTitle"><div class="mpShield">♙</div><div><h2>Seu Time</h2><p>'+mpEsc(myTeam.formation||'4-3-3')+'</p></div></div><div class="mpFormBar">'+mpFormBtns(myTeam.formation||'4-3-3')+'</div><div class="mpTimerTop"><span>Tempo</span><b id="mpDraftTimerText">20s</b><div><i id="mpDraftTimerBar"></i></div></div></div>';
-   const main='<main class="mpDraftPanel mpMainPanel">'+header+renderMpPitchV33()+optionsHtml+'</main>';
+   const main='<main class="mpDraftPanel mpMainPanel"><div class="mpTeamHeader"><div class="mpTeamTitle"><div class="mpShield">♙</div><div><h2>Seu Time</h2><p>4-3-3</p></div></div><div class="mpStatsMini"><div class="mpStatBox">Entrosamento<b>0</b></div><div class="mpStatBox">Elenco<b>--</b></div></div></div>'+renderMpPitchV33()+optionsHtml+'<div style="padding:12px 20px 16px"><div class="mpLog" style="height:auto"><b>Tempo para escolher</b> <span id="mpDraftTimerText" class="mpTitle" style="float:right">20s</span><div style="clear:both;height:8px;background:#162231;border-radius:99px;margin-top:10px"><div id="mpDraftTimerBar" style="height:100%;width:100%;background:#f2c94c;border-radius:99px"></div></div></div></div></main>';
    const feed='<aside class="mpDraftPanel"><div class="mpPanelHead">📋 Histórico do Draft</div>'+renderPickFeed(d.pickLog)+'</aside>';
    by('mpOptions').className='';
    by('mpOptions').innerHTML='<div class="mpTopLine"><div><h1>Ultimate Draft FC Online</h1><p class="mpSub">Rodada '+round+' • Pick '+(d.index+1)+' / '+d.total+' — Vez de: '+mpEsc(d.club)+(isMe?' — SUA VEZ':'')+'</p></div></div><div class="mpDraftShell">'+renderDraftOrder(d)+main+feed+'</div>';
@@ -3539,35 +3525,61 @@ function renderMpPitch(){
    };
    tick(); mpDraftTimerInterval=setInterval(tick,200);
  }
- function mpButtonPlayers(team,side){
-   const form=team.formation||'4-3-3'; const slots=mpFormationSlotCoords(form); const players=(team.players||[]).slice(); const used={};
-   return slots.map(sl=>{
-     const p=players.find((x,j)=>!used[j] && mpNormPos(x.assignedPos||x.pos)===sl.pos);
-     if(p){ const idx=players.indexOf(p); used[idx]=true; }
-     let x=side==='home' ? sl.x/2 : 50+(100-sl.x)/2;
-     let y=sl.y;
-     return '<div class="mpButtonDisc '+side+'" style="left:'+x+'%;top:'+y+'%"><b>'+(p?mpEsc(mpInitials(p.name)):mpEsc(sl.pos))+'</b><small>'+(p?mpEsc(sl.pos):'')+'</small></div>';
-   }).join('');
+ function playerInitials(name){
+   const parts=String(name||'J').trim().split(/\s+/).filter(Boolean);
+   if(!parts.length) return 'J';
+   if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+   return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
  }
- function mpPanelData(type){
-   const teams=(mpCurrentDraft&&mpCurrentDraft.teams)||[];
-   if(type==='elencos') return '<h3>Elencos</h3>'+teams.map(t=>'<details><summary>'+mpEsc(t.club)+' ('+(t.players||[]).length+'/11)</summary><div class="mpRosterList">'+(t.players||[]).map(p=>'<span>'+mpEsc(p.assignedPos||p.pos)+' - '+mpEsc(p.name)+' '+mpEsc(p.year||'')+'</span>').join('')+'</div></details>').join('');
-   if(type==='classificacao') return '<h3>Classificação</h3><p class="mpSub">A classificação completa atualiza ao fim da rodada.</p>';
-   if(type==='artilharia') return '<h3>Artilharia</h3><p class="mpSub">Ranking será atualizado pelos gols da rodada.</p>';
-   return '<h3>Rei de assistências</h3><p class="mpSub">Ranking será atualizado pelas assistências da rodada.</p>';
+ function matchCoords(team, side){
+   const flip=side==='away';
+   const base={GK:[8,50],LD:[21,72],ZC1:[22,57],ZC2:[22,43],ZC3:[22,50],LE:[21,28],VOL:[36,50],MC1:[45,62],MC2:[45,38],MC:[45,50],MAT:[56,50],MD:[54,72],ME:[54,28],PE:[70,27],CA:[78,50],SA:[66,50],PD:[70,73]};
+   const need=(team.players||[]).map(p=>mpNormPos(p.assignedPos||p.pos));
+   const occ={}; const total={}; need.forEach(x=>total[x]=(total[x]||0)+1);
+   return (team.players||[]).map(p=>{ const pos=mpNormPos(p.assignedPos||p.pos); occ[pos]=(occ[pos]||0)+1; let key=pos; if(pos==='ZC'&&total[pos]>1) key='ZC'+occ[pos]; if(pos==='MC'&&total[pos]>1) key='MC'+occ[pos]; let xy=base[key]||base[pos]||[45,50]; let x=flip?100-xy[0]:xy[0]; return {p,x,y:xy[1],pos}; });
  }
- function mpOpenPanel(type){ let modal=by('mpSideModal'); if(!modal){ modal=document.createElement('div'); modal.id='mpSideModal'; modal.innerHTML='<div><button onclick="document.getElementById(\'mpSideModal\').classList.remove(\'show\')">Fechar</button><section id="mpSideModalBody"></section></div>'; document.body.appendChild(modal); } by('mpSideModalBody').innerHTML=mpPanelData(type); modal.classList.add('show'); }
  function renderMatch(m){
+   mpCurrentMatch=m;
    by('mpMatchTitle').textContent=m.home.club+' x '+m.away.club; by('mpScore').textContent=m.h+' x '+m.a; by('mpClock').textContent=m.minute+"'";
-   let tools=by('mpMatchTools'); if(!tools){ tools=document.createElement('div'); tools.id='mpMatchTools'; tools.className='mpMatchTools'; by('mpScore').insertAdjacentElement('afterend',tools); }
-   tools.innerHTML='<button onclick="mpOpenPanel(\'elencos\')">Elencos</button><button onclick="mpOpenPanel(\'classificacao\')">Classificação</button><button onclick="mpOpenPanel(\'artilharia\')">Artilharia</button><button onclick="mpOpenPanel(\'assistencias\')">Rei de assistências</button>';
+   let actions=by('mpMatchActions');
+   if(!actions){ actions=document.createElement('div'); actions.id='mpMatchActions'; actions.className='mpMatchActions'; actions.innerHTML='<button class="secondary" onclick="MP.panel(\'elencos\')">Elencos</button><button class="secondary" onclick="MP.panel(\'classificacao\')">Classificação</button><button class="secondary" onclick="MP.panel(\'artilharia\')">Artilharia</button><button class="secondary" onclick="MP.panel(\'assistencias\')">Rei de assistências</button>'; by('mpScore').insertAdjacentElement('afterend',actions); }
    let pitch=by('mpMatchPitch');
-   if(!pitch){ pitch=document.createElement('div'); pitch.id='mpMatchPitch'; pitch.className='mpMatchPitch'; by('mpMatchTools').insertAdjacentElement('afterend',pitch); }
-   const ballX=50+Math.sin((m.minute||0)/7)*32, ballY=50+Math.cos((m.minute||0)/5)*22;
-   pitch.innerHTML='<div class="mpMatchLine mid"></div><div class="mpMatchCircle"></div><div class="mpGoal left"></div><div class="mpGoal right"></div><div class="mpTeamName left">'+mpEsc(m.home.club)+'</div><div class="mpTeamName right">'+mpEsc(m.away.club)+'</div>'+mpButtonPlayers(m.home,'home')+mpButtonPlayers(m.away,'away')+'<div class="mpBall" style="left:'+ballX+'%;top:'+ballY+'%">⚽</div>';
+   if(!pitch){ pitch=document.createElement('div'); pitch.id='mpMatchPitch'; pitch.className='mpMatchPitch soloLike'; actions.insertAdjacentElement('afterend',pitch); }
+   const ballX=10+(m.minute%80), ballY=50+Math.sin((m.minute||0)/7)*22;
+   const home=matchCoords(m.home,'home').map(o=>'<div class="mpPlayerDot home" title="'+mpEsc(o.p.name)+'" style="left:'+o.x+'%;top:'+o.y+'%"><b>'+mpEsc(playerInitials(o.p.name))+'</b><small>'+mpEsc(o.pos)+'</small></div>').join('');
+   const away=matchCoords(m.away,'away').map(o=>'<div class="mpPlayerDot away" title="'+mpEsc(o.p.name)+'" style="left:'+o.x+'%;top:'+o.y+'%"><b>'+mpEsc(playerInitials(o.p.name))+'</b><small>'+mpEsc(o.pos)+'</small></div>').join('');
+   pitch.innerHTML='<div class="mpPitchMark mid"></div><div class="mpPitchMark circle"></div><div class="mpPitchMark box left"></div><div class="mpPitchMark box right"></div><div class="mpPitchMark goal left"></div><div class="mpPitchMark goal right"></div><div class="mpTeamName left">'+mpEsc(m.home.club)+'</div><div class="mpTeamName right">'+mpEsc(m.away.club)+'</div>'+home+away+'<div class="mpBall" style="left:'+ballX+'%;top:'+ballY+'%">⚽</div>';
  }
- function renderStandings(d){ show('mpStandings'); by('mpStandingsTable').innerHTML='<tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'+d.standings.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s.club+(s.human?' 👤':' 🤖')+'</td><td>'+s.PTS+'</td><td>'+s.P+'</td><td>'+s.V+'</td><td>'+s.E+'</td><td>'+s.D+'</td><td>'+(s.GP-s.GC)+'</td></tr>').join(''); }
- window.MP={ open(){ensureSocket();by('mpOverlay').classList.add('show');show('mpHome')}, close(){by('mpOverlay').classList.remove('show')}, createRoom(){ensureSocket().emit('mp:createRoom',{club:by('mpClubCreate').value,password:by('mpPassCreate').value})}, joinRoom(){roomCode=by('mpCodeJoin').value;ensureSocket().emit('mp:joinRoom',{code:roomCode,password:by('mpPassJoin').value,club:by('mpClubJoin').value})}, startDraft(){ensureSocket().emit('mp:startDraft',{code:roomCode})}, changeFormation(f){ const t=mpMyTeam(); if(t) t.formation=f; ensureSocket().emit('mp:changeFormation',{code:roomCode,formation:f}); if(mpCurrentDraft) renderDraft(mpCurrentDraft); }, pick(id){ if(!mpCurrentDraft || mpCurrentDraft.teamId!==myId) return; const card=(mpCurrentDraft.options||[]).find(c=>c.id===id); if(card) mpOpenPositionModal(card); } };
+ function renderMpTable(title, html){
+   let modal=by('mpInfoModal');
+   if(!modal){ modal=document.createElement('div'); modal.id='mpInfoModal'; modal.className='mpInfoModal'; modal.innerHTML='<div class="mpInfoBox"><button class="secondary mpClose" onclick="MP.closePanel()">Fechar</button><h2 id="mpInfoTitle"></h2><div id="mpInfoBody"></div></div>'; by('mpOverlay').appendChild(modal); }
+   by('mpInfoTitle').textContent=title; by('mpInfoBody').innerHTML=html; modal.style.display='flex';
+ }
+ function mpPanel(type){
+   if(type==='elencos'){
+     const teams=(mpCurrentMatch?[mpCurrentMatch.home,mpCurrentMatch.away]:mpLatestTeams)||[];
+     const html='<div class="mpRosterGrid">'+teams.map(t=>'<div><h3>'+mpEsc(t.club)+'</h3><table class="mpTable"><tr><th>Pos</th><th>Jogador</th><th>Fit</th></tr>'+(t.players||[]).map(p=>'<tr><td>'+mpEsc(p.assignedPos||p.pos)+'</td><td>'+mpEsc(p.name)+'</td><td>'+starsHtml(p.fitStars||5)+'</td></tr>').join('')+'</table></div>').join('')+'</div>';
+     return renderMpTable('Elencos', html);
+   }
+   if(type==='classificacao'){
+     const s=mpLatestStandings||[];
+     const html=s.length?'<table class="mpTable"><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'+s.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+mpEsc(x.club)+(x.human?' 👤':' 🤖')+'</td><td>'+x.PTS+'</td><td>'+x.P+'</td><td>'+x.V+'</td><td>'+x.E+'</td><td>'+x.D+'</td><td>'+(x.GP-x.GC)+'</td></tr>').join('')+'</table>':'<p class="mpSub">A classificação aparece após o fim da primeira rodada.</p>';
+     return renderMpTable('Classificação', html);
+   }
+   const events=(mpCurrentMatch&&mpCurrentMatch.events?mpCurrentMatch.events:[]);
+   if(type==='artilharia'){
+     const map={}; events.forEach(e=>{ if(e.scorer) map[e.scorer]=(map[e.scorer]||0)+1; });
+     const rows=Object.entries(map).sort((a,b)=>b[1]-a[1]).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+mpEsc(r[0])+'</td><td>'+r[1]+'</td></tr>').join('');
+     return renderMpTable('Artilharia', rows?'<table class="mpTable"><tr><th>#</th><th>Jogador</th><th>Gols</th></tr>'+rows+'</table>':'<p class="mpSub">Ainda não teve gol nesta partida.</p>');
+   }
+   if(type==='assistencias'){
+     const map={}; events.forEach(e=>{ if(e.assist) map[e.assist]=(map[e.assist]||0)+1; });
+     const rows=Object.entries(map).sort((a,b)=>b[1]-a[1]).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+mpEsc(r[0])+'</td><td>'+r[1]+'</td></tr>').join('');
+     return renderMpTable('Rei de assistências', rows?'<table class="mpTable"><tr><th>#</th><th>Jogador</th><th>Assistências</th></tr>'+rows+'</table>':'<p class="mpSub">Ainda não teve assistência registrada nesta partida.</p>');
+   }
+ }
+ function renderStandings(d){ mpLatestStandings=d.standings||[]; show('mpStandings'); by('mpStandingsTable').innerHTML='<tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'+d.standings.map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s.club+(s.human?' 👤':' 🤖')+'</td><td>'+s.PTS+'</td><td>'+s.P+'</td><td>'+s.V+'</td><td>'+s.E+'</td><td>'+s.D+'</td><td>'+(s.GP-s.GC)+'</td></tr>').join(''); }
+ window.MP={ open(){ensureSocket();by('mpOverlay').classList.add('show');show('mpHome')}, close(){by('mpOverlay').classList.remove('show')}, createRoom(){ensureSocket().emit('mp:createRoom',{club:by('mpClubCreate').value,password:by('mpPassCreate').value})}, joinRoom(){roomCode=by('mpCodeJoin').value;ensureSocket().emit('mp:joinRoom',{code:roomCode,password:by('mpPassJoin').value,club:by('mpClubJoin').value})}, startDraft(){ensureSocket().emit('mp:startDraft',{code:roomCode})}, changeFormation(f){ensureSocket().emit('mp:changeFormation',{code:roomCode,formation:f})}, panel:mpPanel, closePanel(){const m=by('mpInfoModal'); if(m) m.style.display='none';}, pick(id){ if(!mpCurrentDraft || mpCurrentDraft.teamId!==myId) return; const card=(mpCurrentDraft.options||[]).find(c=>c.id===id); if(card) mpOpenPositionModal(card); } };
  window.addEventListener('load',()=>{ const btn=document.createElement('button'); btn.className='startButton mpOnlineBtn'; btn.textContent='Jogar entre amigos (Online)'; btn.onclick=()=>MP.open(); const panel=document.querySelector('.setupPanel'); if(panel) panel.appendChild(btn); });
 })();
 </script>
@@ -3590,23 +3602,32 @@ function renderMpPitch(){
 </style>
 
 <style>
-/* V41 impacto: tudo em uma tela, formação no topo, timer no topo e jogo de botão */
-#mpOverlay{overflow:hidden!important;padding:10px!important}
-#mpOverlay>.mpBox{height:calc(100vh - 20px)!important;max-height:calc(100vh - 20px)!important;overflow:hidden!important;display:flex;flex-direction:column}
-#mpDraft{flex:1;min-height:0;overflow:hidden!important}
-#mpOptions{height:100%;overflow:hidden!important}
-.mpTopLine{margin-bottom:4px!important}.mpTopLine h1{font-size:26px!important}.mpTopLine .mpSub{font-size:13px!important}
-.mpDraftShell{height:calc(100vh - 112px)!important;grid-template-columns:270px minmax(690px,1fr) 290px!important;gap:10px!important}
-.mpDraftPanel{min-height:0!important}.mpMainPanel{min-height:0!important;height:100%;overflow:hidden!important}
-.mpDraftOrderList{height:calc(100% - 118px)!important;overflow:hidden!important}.mpDraftOrderRow{min-height:25px!important;font-size:13px!important;padding:3px 8px!important}.mpRoundBox{padding:8px!important;margin:7px 12px!important}.mpRoundBox b{font-size:15px!important}
-.mpTeamHeader.v41{padding:8px 12px!important;gap:10px!important}.mpTeamHeader.v41 .mpTeamTitle h2{font-size:22px!important}.mpTeamHeader.v41 .mpTeamTitle p{font-size:15px!important}.mpTeamHeader.v41 .mpShield{width:34px;height:34px;font-size:18px}
-.mpFormBar{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:520px}.mpFormBtn{border:1px solid rgba(216,180,79,.45);background:#0d1724;color:#dfe7f4;border-radius:9px;padding:6px 8px;font-weight:900;cursor:pointer;font-size:12px}.mpFormBtn.sel{background:#d8b44f;color:#08101b}.mpFormBtn:hover{outline:2px solid rgba(216,180,79,.35)}
-.mpTimerTop{width:116px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:#070d15;padding:7px 9px;color:#aeb8c7}.mpTimerTop span{font-size:11px}.mpTimerTop b{display:block;color:#f2c94c;font-size:20px}.mpTimerTop div{height:5px;background:#1a2636;border-radius:99px;overflow:hidden}.mpTimerTop i{display:block;height:100%;width:100%;background:#f2c94c;border-radius:99px}
-.mpFieldWrap{height:330px!important}.mpPitchSlot{width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important;border-radius:50%!important;padding:0!important;background:radial-gradient(circle at 35% 28%,#263a52,#0b1420 70%)!important;border:2px solid #d8b44f!important}.mpPitchSlot .btnPlayer{display:flex;flex-direction:column;align-items:center;justify-content:center}.mpPitchSlot b{font-size:15px;color:#fff}.mpPitchSlot small{font-size:9px;color:#f2c94c!important}.mpPitchSlot span{font-size:11px}
-.mpPickHeader{padding:6px!important;font-size:14px!important}.mpCardGridV33{grid-template-columns:repeat(5,minmax(100px,1fr))!important;gap:8px!important;padding:8px 14px!important}.mpCardV33{height:152px!important}.mpCardV33 .kit{top:30px!important;font-size:24px!important}.mpCardV33 .name{font-size:13px!important;bottom:48px!important}.mpCardV33 .year{font-size:10px!important;bottom:26px!important}.mpFeedList{height:calc(100% - 56px)!important}.mpFeedItem{padding:8px 0!important;font-size:12px!important}
-.mpMatchTools{display:flex;gap:8px;justify-content:center;margin:8px 0 10px}.mpMatchTools button{background:#14243a;color:#fff;border:1px solid rgba(216,180,79,.45);border-radius:10px;padding:9px 11px;font-weight:900;cursor:pointer}
-.mpMatchPitch{height:430px!important;max-width:1180px;margin:12px auto!important;background:repeating-linear-gradient(90deg,#0f3a1d 0,#0f3a1d 70px,#104321 70px,#104321 140px)!important}.mpButtonDisc{position:absolute;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;display:grid;place-items:center;text-align:center;border:2px solid #e2c15b;background:radial-gradient(circle at 35% 25%,#f5f7ff,#52657a 35%,#15202d 72%);box-shadow:0 5px 12px rgba(0,0,0,.45);z-index:4}.mpButtonDisc.away{border-color:#80c7ff;background:radial-gradient(circle at 35% 25%,#f5f7ff,#517da2 35%,#142335 72%)}.mpButtonDisc b{font-size:13px;color:#06101d}.mpButtonDisc small{font-size:8px;color:#06101d;margin-top:-8px}.mpBall{z-index:8!important}
-#mpSideModal{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:10060;display:none;align-items:center;justify-content:center}#mpSideModal.show{display:flex}#mpSideModal>div{width:min(900px,92vw);max-height:80vh;overflow:auto;background:#07101d;border:1px solid rgba(216,180,79,.55);border-radius:18px;padding:18px;color:#fff}#mpSideModal button{float:right;background:#172538;color:white;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:9px 14px;font-weight:900}.mpRosterList{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 14px}.mpRosterList span{background:#111d2c;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px;font-size:12px}
+/* V42 - correção dos campos e painéis funcionais */
+#mpOverlay>.mpBox{max-width:1580px!important;height:calc(100vh - 28px);overflow:hidden!important;}
+.mpDraftShell{grid-template-columns:280px minmax(760px,1fr) 310px!important;height:calc(100vh - 118px);}
+.mpDraftPanel{min-height:0!important;}
+.mpMainPanel{min-height:0!important;height:100%;}
+.mpDraftOrderList{height:auto!important;max-height:calc(100vh - 250px)!important;overflow:hidden!important;}
+.mpFeedList{height:calc(100vh - 190px)!important;overflow:auto!important;}
+.mpTeamHeader{padding:8px 14px!important;}
+.mpTeamTitle h2{font-size:22px!important}.mpTeamTitle p{font-size:15px!important}
+.mpStatsMini{display:none!important;}
+.mpFormBar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 10px;background:#080d15;border-bottom:1px solid rgba(216,180,79,.28)}
+.mpFormBar span{color:#b8c2d2;font-weight:900;margin-right:4px}.mpFormBtn{padding:5px 8px!important;font-size:12px!important;border-radius:8px!important;background:#142033!important;color:#dce6f5!important;border:1px solid rgba(255,255,255,.12)!important}.mpFormBtn.on{background:#d8b44f!important;color:#06101b!important}
+.mpDraftField{height:305px!important;background:linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(180deg,#12502a,#0b371d)!important;background-size:50% 100%,100% 100%!important;}
+.mpDraftField:before{inset:12px 32px!important;border-radius:8px!important}.mpDraftField:after{opacity:.65}.mpDraftField .mpCenterCircle{top:54%!important;width:120px!important;height:120px!important}
+.mpPitchSlot{min-width:82px!important;max-width:116px!important;min-height:36px!important;border-radius:10px!important;font-size:12px!important;line-height:1.05!important;padding:5px 7px!important;background:#0d1624!important;}
+.mpPitchSlot b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:104px}.mpPitchSlot small{font-size:9px!important;color:#cbd5e5!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:104px}.mpPitchSlot.filled{background:linear-gradient(#192a3f,#0b1421)!important;color:#fff!important;}
+.mpCardGridV33{grid-template-columns:repeat(5,minmax(110px,1fr))!important;gap:8px!important;padding:10px 16px!important;}.mpCardV33{height:152px!important}.mpCardV33 .kit{top:30px!important;font-size:26px!important}.mpCardV33 .name{font-size:13px!important;bottom:45px!important}.mpCardV33 .year{font-size:10px!important;bottom:22px!important}.mpPickHeader{padding:7px 10px!important;font-size:14px!important}
+#mpMatch{height:calc(100vh - 82px);overflow:hidden!important;}
+#mpMatchTitle{font-size:24px!important;margin-bottom:4px!important}.mpScore{font-size:44px!important;margin:4px 0!important}.mpTitle#mpClock{font-size:28px!important;}
+.mpMatchActions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 10px}.mpMatchActions button{padding:8px 14px!important}
+.mpMatchPitch.soloLike{height:430px!important;max-width:1180px;margin:10px auto 10px!important;background:linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,#105027,#0d4222 12.5%,#105027 25%,#0d4222 37.5%,#105027 50%,#0d4222 62.5%,#105027 75%,#0d4222 87.5%,#105027)!important;background-size:50% 100%,100% 100%!important;border:1px solid rgba(216,180,79,.55)!important;border-radius:16px!important;position:relative;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(255,255,255,.08),0 16px 50px rgba(0,0,0,.35)}
+.mpMatchPitch.soloLike:before{content:'';position:absolute;inset:24px 42px;border:2px solid rgba(255,255,255,.22);border-radius:8px}.mpPitchMark.mid{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.18)}.mpPitchMark.circle{position:absolute;left:50%;top:50%;width:120px;height:120px;border:2px solid rgba(255,255,255,.18);border-radius:50%;transform:translate(-50%,-50%)}.mpPitchMark.box{position:absolute;top:32%;width:70px;height:150px;border:2px solid rgba(255,255,255,.18)}.mpPitchMark.box.left{left:42px;border-left:0}.mpPitchMark.box.right{right:42px;border-right:0}.mpPitchMark.goal{position:absolute;top:41%;width:20px;height:78px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.04)}.mpPitchMark.goal.left{left:20px}.mpPitchMark.goal.right{right:20px}
+.mpPlayerDot{position:absolute;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;display:grid;place-items:center;text-align:center;z-index:4;box-shadow:0 7px 14px rgba(0,0,0,.4);border:2px solid #f2c94c;background:radial-gradient(circle at 35% 25%,#293a4f,#0d1725)}.mpPlayerDot.away{border-color:#8bd0ff;background:radial-gradient(circle at 35% 25%,#d5efff,#3976a5)}.mpPlayerDot b{font-size:14px;line-height:1;color:#fff}.mpPlayerDot small{position:absolute;bottom:3px;font-size:8px;color:#0b1018;opacity:.9}.mpPlayerDot.home small{color:#cfd8e7}.mpBall{position:absolute;transform:translate(-50%,-50%);font-size:25px;z-index:6;filter:drop-shadow(0 0 8px #fff);transition:.9s linear}.mpTeamName{position:absolute;top:12px;font-weight:1000;color:#fff;z-index:5}.mpTeamName.left{left:24px}.mpTeamName.right{right:24px}
+.mpInfoModal{position:absolute;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:10060}.mpInfoBox{width:min(980px,92vw);max-height:82vh;overflow:auto;background:#08111d;border:1px solid rgba(216,180,79,.55);border-radius:16px;padding:18px;box-shadow:0 18px 60px rgba(0,0,0,.55)}.mpInfoBox h2{color:#f2c94c;margin-bottom:12px}.mpClose{float:right}.mpRosterGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.mpRosterGrid h3{color:#fff;margin:8px 0}
+#mpMatchLog{max-width:1180px;margin:10px auto 0!important;height:90px!important;overflow:auto!important;}
+@media(max-width:1200px){#mpOverlay>.mpBox{height:auto;overflow:auto!important}.mpDraftShell{height:auto;grid-template-columns:1fr!important}.mpDraftField{height:320px!important}.mpRosterGrid{grid-template-columns:1fr}.mpMatchPitch.soloLike{height:360px!important}}
 </style>
 
 </body>

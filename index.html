@@ -3690,5 +3690,140 @@ function renderMpPitch(){
 .mpCardGridV33{padding-bottom:8px!important}
 #mpOptions{overflow:hidden!important}
 </style>
+
+
+<style>
+/* V45 - campo do draft com espaçamento corrigido e nomes sem reticências */
+.mpDraftField{height:390px!important;min-height:390px!important;}
+.mpPitchSlot{min-width:92px!important;max-width:138px!important;min-height:42px!important;padding:6px 9px!important;}
+.mpPitchSlot b{max-width:128px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.05!important;font-size:12px!important;}
+.mpPitchSlot small{max-width:128px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;font-size:9px!important;}
+.mpPitchSlot:not(.filled){min-width:74px!important;max-width:88px!important;min-height:36px!important;}
+.mpPitchSlot:not(.filled) b{font-size:14px!important;white-space:nowrap!important;}
+.mpDraftField .mpCenterCircle{top:55%!important;width:116px!important;height:116px!important;opacity:.75!important;}
+@media(max-width:1200px){.mpDraftField{height:380px!important}}
+</style>
+<script>
+/* V45 - substitui apenas o desenho do campo online, sem mexer no restante */
+(function(){
+  function safeEsc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[ch]||ch})}
+  function slotName(name){
+    const n=String(name||'').trim();
+    if(!n) return '';
+    const parts=n.split(/\s+/).filter(Boolean);
+    if(parts.length===1) return parts[0].slice(0,12);
+    const first=parts[0], last=parts[parts.length-1];
+    const combo=(first+' '+last);
+    if(combo.length<=14) return combo;
+    return first.length<=11 ? first : first.slice(0,11);
+  }
+  const MP_FORMATIONS={
+    '4-3-3':[['GK',50,90],['LE',18,74],['ZC',38,76],['ZC',62,76],['LD',82,74],['VOL',62,58],['MC',36,52],['MAT',50,38],['PE',20,20],['CA',50,14],['PD',80,20]],
+    '4-4-2':[['GK',50,90],['LE',18,74],['ZC',38,76],['ZC',62,76],['LD',82,74],['ME',18,50],['MC',38,56],['MC',62,56],['MD',82,50],['SA',40,20],['CA',60,20]],
+    '4-1-3-2':[['GK',50,90],['LE',18,74],['ZC',38,76],['ZC',62,76],['LD',82,74],['VOL',50,63],['ME',24,44],['MAT',50,39],['MD',76,44],['SA',40,18],['CA',60,18]],
+    '4-5-1':[['GK',50,90],['LE',18,74],['ZC',38,76],['ZC',62,76],['LD',82,74],['VOL',50,64],['ME',17,49],['MC',35,54],['MAT',50,42],['MD',83,49],['CA',50,15]],
+    '3-5-2':[['GK',50,90],['ZC',30,76],['ZC',50,79],['ZC',70,76],['ME',16,51],['MC',35,57],['MAT',50,42],['VOL',65,60],['MD',84,51],['SA',40,18],['CA',60,18]],
+    '4-1-2-3':[['GK',50,90],['LE',18,74],['ZC',38,76],['ZC',62,76],['LD',82,74],['VOL',50,64],['MC',38,50],['MC',62,50],['PE',20,20],['CA',50,14],['PD',80,20]],
+    '5-3-2':[['GK',50,90],['LE',12,74],['ZC',30,76],['ZC',50,79],['ZC',70,76],['LD',88,74],['MC',34,55],['MAT',50,41],['VOL',66,59],['SA',40,18],['CA',60,18]],
+    '4-2-3-1':[['GK',50,90],['LE',18,74],['ZC',38,76],['ZC',62,76],['LD',82,74],['VOL',38,62],['MC',62,62],['ME',20,40],['MAT',50,36],['MD',80,40],['CA',50,14]],
+    '4-3-1-2':[['GK',50,90],['LE',18,74],['ZC',38,76],['ZC',62,76],['LD',82,74],['MC',34,58],['VOL',66,58],['MC',50,52],['MAT',50,36],['SA',40,18],['CA',60,18]],
+    '3-4-3':[['GK',50,90],['ZC',30,76],['ZC',50,79],['ZC',70,76],['ME',18,55],['MC',38,58],['VOL',62,58],['MD',82,55],['PE',20,20],['CA',50,14],['PD',80,20]],
+    '5-2-1-2':[['GK',50,90],['LE',12,74],['ZC',30,76],['ZC',50,79],['ZC',70,76],['LD',88,74],['MC',38,60],['VOL',62,60],['MAT',50,40],['SA',40,18],['CA',60,18]],
+    '3-4-1-2':[['GK',50,90],['ZC',30,76],['ZC',50,79],['ZC',70,76],['ME',18,55],['MC',38,60],['VOL',62,60],['MD',82,55],['MAT',50,40],['SA',40,18],['CA',60,18]]
+  };
+  window.mpFormationNeed=function(formation){return (MP_FORMATIONS[String(formation||'4-3-3')]||MP_FORMATIONS['4-3-3']).map(x=>x[0]);};
+  window.renderMpPitchV33=function(){
+    if(!mpCurrentDraft) return '';
+    const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[],formation:'4-3-3'};
+    const formation=myTeam.formation||'4-3-3';
+    const slots=MP_FORMATIONS[formation]||MP_FORMATIONS['4-3-3'];
+    const allForms=Object.keys(MP_FORMATIONS);
+    const formBtns=allForms.map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
+    const players=(myTeam.players||[]).slice();
+    const used={};
+    return '<div class="mpFormBar"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField"><div class="mpCenterCircle"></div>'+slots.map((sl,i)=>{
+      const pos=sl[0], x=sl[1], y=sl[2];
+      const found=players.find((pl,j)=>!used[j] && mpNormPos(pl.assignedPos||pl.pos)===pos);
+      if(found){ used[players.indexOf(found)]=true; }
+      const label=found?slotName(found.name):pos;
+      const sub=found?(pos+' • '+starsHtml(found.fitStars||adaptationStars(found.pos,pos))):'';
+      return '<div class="mpPitchSlot '+(found?'filled':'')+'" style="left:'+x+'%;top:'+y+'%"><b>'+safeEsc(label)+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
+    }).join('')+'</div>';
+  };
+})();
+</script>
+
+
+
+<style>
+/* V46 - aumenta somente o campo central do draft, mantendo ordem/histórico/cartas */
+#mpOverlay>.mpBox{max-width:1720px!important;}
+.mpDraftShell{grid-template-columns:250px minmax(980px,1fr) 260px!important;gap:10px!important;}
+.mpMainPanel{min-width:0!important;}
+.mpDraftField{height:470px!important;min-height:470px!important;margin:0!important;}
+.mpDraftField:before{inset:18px 34px!important;}
+.mpDraftField .mpCenterCircle{top:55%!important;width:150px!important;height:150px!important;}
+.mpPitchSlot{min-width:112px!important;max-width:154px!important;min-height:48px!important;padding:7px 10px!important;border-radius:11px!important;}
+.mpPitchSlot b{font-size:12px!important;line-height:1.05!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;max-width:144px!important;}
+.mpPitchSlot small{font-size:9px!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;max-width:144px!important;}
+.mpPitchSlot:not(.filled){min-width:78px!important;max-width:92px!important;min-height:38px!important;padding:6px 8px!important;}
+.mpPitchSlot:not(.filled) b{font-size:14px!important;white-space:nowrap!important;}
+.mpFormBar{padding:6px 10px!important;gap:5px!important;}
+.mpFormBtn{font-size:11px!important;padding:5px 7px!important;}
+.mpCardGridV33{padding-top:8px!important;}
+@media(max-width:1400px){.mpDraftShell{grid-template-columns:230px minmax(820px,1fr) 240px!important}.mpDraftField{height:430px!important;min-height:430px!important}.mpPitchSlot{min-width:100px!important;max-width:138px!important}}
+</style>
+<script>
+/* V46 - redesenha apenas os pontos do campo do draft com mais largura e espaçamento */
+(function(){
+  function safeEscV46(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[ch]||ch})}
+  function slotNameV46(name){
+    const n=String(name||'').trim(); if(!n) return '';
+    const parts=n.split(/\s+/).filter(Boolean);
+    const known=['Jr','Jr.','Junior','Neto','Filho'];
+    if(parts.length===1) return parts[0].slice(0,16);
+    let first=parts[0], last=parts[parts.length-1];
+    if(known.includes(last) && parts.length>2) last=parts[parts.length-2]+' '+last;
+    let combo=first+' '+last;
+    if(combo.length<=18) return combo;
+    if(last.length<=16) return last;
+    return first.slice(0,15);
+  }
+  const MP_FORMATIONS_V46={
+    '4-3-3':[['GK',50,90],['LE',14,72],['ZC',36,76],['ZC',64,76],['LD',86,72],['MC',33,52],['VOL',67,58],['MAT',50,37],['PE',18,20],['CA',50,13],['PD',82,20]],
+    '4-4-2':[['GK',50,90],['LE',14,72],['ZC',36,76],['ZC',64,76],['LD',86,72],['ME',16,49],['MC',36,56],['MC',64,56],['MD',84,49],['SA',39,20],['CA',61,20]],
+    '4-1-3-2':[['GK',50,90],['LE',14,72],['ZC',36,76],['ZC',64,76],['LD',86,72],['VOL',50,64],['ME',18,45],['MAT',50,38],['MD',82,45],['SA',39,18],['CA',61,18]],
+    '4-5-1':[['GK',50,90],['LE',14,72],['ZC',36,76],['ZC',64,76],['LD',86,72],['VOL',50,64],['ME',13,49],['MC',33,55],['MAT',50,41],['MD',87,49],['CA',50,14]],
+    '3-5-2':[['GK',50,90],['ZC',28,76],['ZC',50,79],['ZC',72,76],['ME',13,52],['MC',33,58],['MAT',50,41],['VOL',67,61],['MD',87,52],['SA',39,18],['CA',61,18]],
+    '4-1-2-3':[['GK',50,90],['LE',14,72],['ZC',36,76],['ZC',64,76],['LD',86,72],['VOL',50,64],['MC',34,51],['MC',66,51],['PE',18,20],['CA',50,13],['PD',82,20]],
+    '5-3-2':[['GK',50,90],['LE',9,72],['ZC',29,76],['ZC',50,79],['ZC',71,76],['LD',91,72],['MC',32,57],['MAT',50,40],['VOL',68,60],['SA',39,18],['CA',61,18]],
+    '4-2-3-1':[['GK',50,90],['LE',14,72],['ZC',36,76],['ZC',64,76],['LD',86,72],['VOL',36,63],['MC',64,63],['ME',18,42],['MAT',50,36],['MD',82,42],['CA',50,13]],
+    '4-3-1-2':[['GK',50,90],['LE',14,72],['ZC',36,76],['ZC',64,76],['LD',86,72],['MC',30,59],['VOL',70,61],['MC',50,53],['MAT',50,36],['SA',39,18],['CA',61,18]],
+    '3-4-3':[['GK',50,90],['ZC',28,76],['ZC',50,79],['ZC',72,76],['ME',15,55],['MC',36,60],['VOL',64,60],['MD',85,55],['PE',18,20],['CA',50,13],['PD',82,20]],
+    '5-2-1-2':[['GK',50,90],['LE',9,72],['ZC',29,76],['ZC',50,79],['ZC',71,76],['LD',91,72],['MC',36,61],['VOL',64,61],['MAT',50,40],['SA',39,18],['CA',61,18]],
+    '3-4-1-2':[['GK',50,90],['ZC',28,76],['ZC',50,79],['ZC',72,76],['ME',15,55],['MC',36,61],['VOL',64,61],['MD',85,55],['MAT',50,40],['SA',39,18],['CA',61,18]]
+  };
+  window.mpFormationNeed=function(formation){return (MP_FORMATIONS_V46[String(formation||'4-3-3')]||MP_FORMATIONS_V46['4-3-3']).map(x=>x[0]);};
+  window.renderMpPitchV33=function(){
+    if(!mpCurrentDraft) return '';
+    const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[],formation:'4-3-3'};
+    const formation=myTeam.formation||'4-3-3';
+    const slots=MP_FORMATIONS_V46[formation]||MP_FORMATIONS_V46['4-3-3'];
+    const allForms=Object.keys(MP_FORMATIONS_V46);
+    const formBtns=allForms.map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
+    const players=(myTeam.players||[]).slice();
+    const used={};
+    return '<div class="mpFormBar"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField"><div class="mpCenterCircle"></div>'+slots.map((sl,i)=>{
+      const pos=sl[0], x=sl[1], y=sl[2];
+      const found=players.find((pl,j)=>!used[j] && mpNormPos(pl.assignedPos||pl.pos)===pos);
+      if(found){ used[players.indexOf(found)]=true; }
+      const label=found?slotNameV46(found.name):pos;
+      const sub=found?(pos+' • '+starsHtml(found.fitStars||adaptationStars(found.pos,pos))):'';
+      return '<div class="mpPitchSlot '+(found?'filled':'')+'" style="left:'+x+'%;top:'+y+'%"><b>'+safeEscV46(label)+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
+    }).join('')+'</div>';
+  };
+})();
+</script>
+
 </body>
 </html>

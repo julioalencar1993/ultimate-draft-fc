@@ -158,7 +158,7 @@ function loadRealCards(){
 
 const realCards = loadRealCards();
 
-const formations = ['4-3-3','4-4-2','4-1-3-2','4-5-1','3-5-2','4-1-2-3','5-3-2'];
+const formations = ['4-3-3','4-4-2','4-1-3-2','4-5-1','3-5-2','4-1-2-3','5-3-2','4-2-3-1','4-3-1-2','3-4-3','5-2-1-2','3-4-1-2'];
 function rnd(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function code8(){ let c; do { c=String(rnd(10000000,99999999)); } while(rooms.has(c)); return c; }
 function cloneCard(p,i){
@@ -222,7 +222,12 @@ const FORMATION_SLOTS={
   '4-5-1':['GK','LD','ZC','ZC','LE','VOL','MC','MAT','MD','ME','CA'],
   '3-5-2':['GK','ZC','ZC','ZC','VOL','MC','MAT','MD','ME','SA','CA'],
   '4-1-2-3':['GK','LD','ZC','ZC','LE','VOL','MC','MC','PE','CA','PD'],
-  '5-3-2':['GK','LD','ZC','ZC','ZC','LE','VOL','MC','MAT','SA','CA']
+  '5-3-2':['GK','LD','ZC','ZC','ZC','LE','VOL','MC','MAT','SA','CA'],
+  '4-2-3-1':['GK','LD','ZC','ZC','LE','VOL','MC','ME','MAT','MD','CA'],
+  '4-3-1-2':['GK','LD','ZC','ZC','LE','VOL','MC','MC','MAT','SA','CA'],
+  '3-4-3':['GK','ZC','ZC','ZC','ME','MC','VOL','MD','PE','CA','PD'],
+  '5-2-1-2':['GK','LD','ZC','ZC','ZC','LE','MC','VOL','MAT','SA','CA'],
+  '3-4-1-2':['GK','ZC','ZC','ZC','ME','MC','VOL','MD','MAT','SA','CA']
 };
 function formationSlots(team){ return (FORMATION_SLOTS[team?.formation] || FORMATION_SLOTS['4-3-3']).slice(); }
 function openSlots(team){ const need=formationSlots(team); const used=countPositions(team.players||[]); return need.filter(pos=>{ used[pos]=used[pos]||0; const total=need.filter(x=>x===pos).length; return used[pos]++ < total; }); }

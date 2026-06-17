@@ -224,5 +224,10 @@ io.on('connection', socket=>{
  socket.on('disconnect',()=>{ rooms.forEach(room=>{ const p=room.players.find(x=>x.id===socket.id); if(p){ p.disconnected=true; emitRoom(room); } }); });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Servidor iniciado na porta ' + PORT));
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = '0.0.0.0';
+server.listen(PORT, HOST, () => console.log('Servidor iniciado em ' + HOST + ':' + PORT));
+server.on('error', (err) => {
+  console.error('Erro no servidor:', err);
+  process.exit(1);
+});

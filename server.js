@@ -13,7 +13,7 @@ app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'index.html')));
 const MAX_PLAYERS = 8;
 const TOTAL_TEAMS = 20; // campeonato continua com 20 times; sala aceita até 8 jogadores humanos
 const PICK_ROUNDS = 11;
-const BOT_PICK_DELAY_MS = 2000;
+const BOT_PICK_DELAY_MS = 1000;
 const rooms = new Map();
 
 function normPos(pos){ pos=String(pos||'').toUpperCase(); const map={MEI:'MAT',ZAG:'ZC',ATA:'CA',ALA:'MD'}; return map[pos]||pos; }
@@ -197,7 +197,7 @@ function advanceDraft(room){ if(!room.draft) return;
  const teamIdx = room.draft.order[room.draft.index];
  const team = room.teams[teamIdx];
  room.draft.options = makeOptions(10);
- io.to(room.code).emit('mp:draftState', { index:room.draft.index, total:room.draft.order.length, teamId:team.id, club:team.club, human:team.human, botDelayMs: team.human ? 0 : BOT_PICK_DELAY_MS, options: team.human ? room.draft.options : [], order:room.draft.baseOrder.map(i=>({id:room.teams[i].id,club:room.teams[i].club,human:room.teams[i].human})), pickLog:room.draft.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})) });
+ io.to(room.code).emit('mp:draftState', { index:room.draft.index, total:room.draft.order.length, teamId:team.id, club:team.club, human:team.human, botDelayMs: team.human ? 0 : BOT_PICK_DELAY_MS, options: room.draft.options, order:room.draft.baseOrder.map(i=>({id:room.teams[i].id,club:room.teams[i].club,human:room.teams[i].human})), pickLog:room.draft.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})) });
  if(!team.human){ setTimeout(()=>{ const pick=room.draft.options[rnd(0,room.draft.options.length-1)]; applyPick(room, team.id, pick.id); }, BOT_PICK_DELAY_MS); }
 }
 function applyPick(room, teamId, cardId, assignedPos){ const d=room.draft; if(!d) return false; const teamIdx=d.order[d.index]; const team=room.teams[teamIdx]; if(!team || team.id!==teamId) return false; if(team.human && !room.players.some(p=>p.id===teamId && !p.disconnected)) return false; const card=d.options.find(c=>c.id===cardId) || d.options[0]; if(!card) return false; card.pos=normPos(card.pos); card.assignedPos=validAssignedPos(team, card, assignedPos) || pickPosition(team, card); card.fitStars=adaptationStars(card.pos,card.assignedPos); card.fitLoss=positionPenalty(card,card.assignedPos); card.effectiveOvr=effectiveOvr(card,card.assignedPos); team.players.push(card); const log={club:team.club, teamId:team.id, card:{name:card.name,pos:card.pos,year:card.year,ovr:card.ovr,effectiveOvr:card.effectiveOvr,fitStars:card.fitStars,assignedPos:card.assignedPos}, pick:d.index+1, round:Math.floor(d.index/TOTAL_TEAMS)+1}; d.pickLog.push(log); io.to(room.code).emit('mp:pickMade',{ teamId:team.id, club:team.club, card, log, pickLog:d.pickLog.slice(-80), teams:room.teams.map(t=>({id:t.id,club:t.club,count:t.players.length,human:t.human,players:t.players})), nextIndex:d.index+1, total:d.order.length }); d.index++; advanceDraft(room); return true; }

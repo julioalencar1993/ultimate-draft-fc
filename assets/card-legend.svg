@@ -1,6 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 340" preserveAspectRatio="none">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a3b12"/><stop offset=".72" stop-color="#090703"/></linearGradient><linearGradient id="shine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
-<path d="M20 8H220C228 8 234 14 234 22V300L205 332H35L6 300V22C6 14 12 8 20 8Z" fill="url(#g)" stroke="#f2c94c" stroke-width="3"/>
-<path d="M30 20H210C218 20 222 25 222 33V286L199 318H41L18 286V33C18 25 22 20 30 20Z" fill="none" stroke="#fff" stroke-opacity=".07"/>
-<path d="M-40 300L205 -20H260L15 340Z" fill="url(#shine)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#151b24"/>
+      <stop offset="0.45" stop-color="#070b12"/>
+      <stop offset="1" stop-color="#020408"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff1a6"/>
+      <stop offset="0.35" stop-color="#d8a934"/>
+      <stop offset="0.65" stop-color="#8b5f12"/>
+      <stop offset="1" stop-color="#f6d76a"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="10%" r="65%">
+      <stop offset="0" stop-color="#f6d76a" stop-opacity="0.20"/>
+      <stop offset="0.5" stop-color="#f6d76a" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M26 9H214C225 9 232 17 232 29V286L206 329H34L8 286V29C8 17 15 9 26 9Z" fill="url(#bg)" stroke="url(#gold)" stroke-width="4"/>
+  <path d="M35 22H205C214 22 219 28 219 37V276L198 316H42L21 276V37C21 28 26 22 35 22Z" fill="none" stroke="#fff" stroke-opacity="0.08" stroke-width="2"/>
+  <path d="M26 9H214C225 9 232 17 232 29V286L206 329H34L8 286V29C8 17 15 9 26 9Z" fill="url(#glow)"/>
+  <path d="M-45 302L194 -18H252L12 340Z" fill="url(#shine)"/>
+  <path d="M92 12H148L136 27H104Z" fill="url(#gold)" opacity="0.85"/>
+  <circle cx="120" cy="309" r="5" fill="url(#gold)" opacity="0.9"/>
 </svg>

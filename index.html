@@ -3444,29 +3444,7 @@ window.ULTIMATE_DRAFT_COACH_OPTIONS = 5;
  let socket=null, roomCode=null, myId=null, mpCurrentDraft=null, mpPendingCard=null, mpCurrentMatch=null, mpLatestStandings=null, mpLatestTeams=[];
  function by(id){return document.getElementById(id)}
  function show(sec){['mpHome','mpLobby','mpDraft','mpMatch','mpStandings'].forEach(id=>by(id).style.display=id===sec?'block':'none')}
- function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{
-   // Atualiza também no próprio evento do pick. Antes só atualizava no próximo draftState;
-   // no último pick não existe próximo draftState, então parecia que o último bot travava.
-   if(mpCurrentDraft){
-     mpCurrentDraft.pickLog=d.pickLog||mpCurrentDraft.pickLog||[];
-     mpCurrentDraft.teams=d.teams||mpCurrentDraft.teams||[];
-     mpCurrentDraft.index=typeof d.nextIndex==='number'?d.nextIndex:mpCurrentDraft.index;
-     const feed=document.querySelector('.v60Feed');
-     if(feed && typeof renderPickFeed==='function') feed.innerHTML='<div class="mpPanelHead">📋 Histórico do Draft</div>'+renderPickFeed(mpCurrentDraft.pickLog);
-     const field=document.querySelector('.v60Main');
-     if(field && typeof renderMpPitchV33==='function') field.innerHTML=renderMpPitchV33();
-   }
- }); socket.on('mp:draftDone',d=>{
-   if(mpCurrentDraft){
-     mpCurrentDraft.pickLog=(d&&d.pickLog)||mpCurrentDraft.pickLog||[];
-     mpCurrentDraft.teams=(d&&d.teams)||mpCurrentDraft.teams||[];
-     const feed=document.querySelector('.v60Feed');
-     if(feed && typeof renderPickFeed==='function') feed.innerHTML='<div class="mpPanelHead">📋 Histórico do Draft</div>'+renderPickFeed(mpCurrentDraft.pickLog);
-     const field=document.querySelector('.v60Main');
-     if(field && typeof renderMpPitchV33==='function') field.innerHTML=renderMpPitchV33();
-   }
-   by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...';
- }); socket.on('mp:yourMatch',d=>{show('mpMatch'); mpCurrentMatch=d.match; renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{mpCurrentMatch=d.match; renderMatch(d.match); const log=by('mpMatchLog'); const assist=d.event.assist?' 👟 '+d.event.assist:''; log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+assist+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:matchTick',d=>{mpCurrentMatch=d.match; renderMatch(d.match)}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',d=>{mpLatestStandings=d.standings||[]; renderStandings(d)}); return socket; }
+ function ensureSocket(){ if(socket) return socket; socket=io(); socket.on('connect',()=>{myId=socket.id}); socket.on('mp:error',m=>alert(m)); socket.on('mp:roomCreated',d=>{roomCode=d.code;by('mpRoomCode').textContent=d.code;show('mpLobby')}); socket.on('mp:roomState',renderRoom); socket.on('mp:draftState',renderDraft); socket.on('mp:pickMade',d=>{ /* sem flash: o histórico atualiza no próximo estado do draft */ }); socket.on('mp:draftDone',()=>{by('mpDraftTitle').textContent='Draft encerrado. Preparando rodada...'}); socket.on('mp:yourMatch',d=>{show('mpMatch'); mpCurrentMatch=d.match; renderMatch(d.match); by('mpMatchLog').innerHTML=''}); socket.on('mp:matchEvent',d=>{mpCurrentMatch=d.match; renderMatch(d.match); const log=by('mpMatchLog'); const assist=d.event.assist?' 👟 '+d.event.assist:''; log.innerHTML='<div>'+d.event.minute+'\' ⚽ '+d.event.scorer+assist+' - '+d.event.club+' ('+d.event.score+')</div>'+log.innerHTML}); socket.on('mp:matchTick',d=>{mpCurrentMatch=d.match; renderMatch(d.match)}); socket.on('mp:roundClock',d=>{by('mpClock').textContent=d.minute+"'"}); socket.on('mp:roundFinished',d=>{mpLatestStandings=d.standings||[]; renderStandings(d)}); return socket; }
  function renderRoom(r){ roomCode=r.code; by('mpRoomCode').textContent=r.code; by('mpPlayers').innerHTML=r.players.map((p,i)=>'<span class="mpPill">'+(i+1)+'. '+p.club+(p.id===r.hostId?' 👑':'')+'</span>').join(''); by('mpStartBtn').style.display=(myId===r.hostId && r.phase==='lobby')?'inline-block':'none'; if(r.phase==='lobby') show('mpLobby'); }
  function mpEsc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]})}
  function mpDraftCardHtml(c){

@@ -297,8 +297,8 @@ function finishDraftPhase(room){
     pickLog: room.draft.pickLog.slice(-80),
     teams: serializeDraftTeams(room)
   });
-  // Garante que o último pick apareça e, em seguida, entra nos jogos sem depender do cliente.
-  setTimeout(()=>{ if(room.phase==='readyRound') startRound(room); }, 900);
+  // V68: entra nos jogos imediatamente. Não deixa a sala presa na tela do draft.
+  if(room.phase==='readyRound') startRound(room);
 }
 function isDraftComplete(room){
   if(!room || !room.draft) return true;
@@ -324,44 +324,73 @@ function emitDraftState(room, team){
 }
 function advanceDraft(room){
   if(!room.draft || room.phase!=='draft') return;
-  if(isDraftComplete(room)){ finishDraftPhase(room); return; }
 
-  const d=room.draft;
-  const teamIdx = d.order[d.index];
-  const team = room.teams[teamIdx];
-  if(!team){ finishDraftPhase(room); return; }
+  // V68: fluxo sem dependência de timer para BOT.
+  // O erro estava acontecendo exatamente no último bot: ele recebia opções, o timer zerava,
+  // mas a escolha não era aplicada. Agora, se a vez é de bot, o servidor escolhe na hora
+  // e só para quando chegar em humano ou quando o draft acabar.
+  let safety=0;
+  while(room.phase==='draft' && room.draft && !room.draft.finalized && safety < 500){
+    safety++;
 
-  if(d.turnTimer){ clearTimeout(d.turnTimer); d.turnTimer=null; }
-  if(d.guardTimer){ clearTimeout(d.guardTimer); d.guardTimer=null; }
+    if(isDraftComplete(room)){
+      finishDraftPhase(room);
+      return;
+    }
 
-  d.options = makeOptions(room, team, 10);
-  const delay = team.human ? 20000 : BOT_PICK_DELAY_MS;
-  const turnIndex = d.index;
-  d.turnEndsAt = Date.now() + delay;
-  emitDraftState(room, team);
+    const d=room.draft;
+    const teamIdx = d.order[d.index];
+    const team = room.teams[teamIdx];
+    if(!team){
+      finishDraftPhase(room);
+      return;
+    }
 
-  // V67: bot não pode depender de timer visual nem de estado do navegador.
-  // Sempre que a vez for de bot, o servidor agenda uma escolha forçada curta
-  // usando o índice atual como trava contra duplicidade.
-  if(!team.human){
-    setTimeout(()=>{
-      try{
-        if(room.phase==='draft' && room.draft && !room.draft.finalized && room.draft.index===turnIndex){
-          forceCurrentPick(room);
-        }
-      }catch(err){ console.error('V67 force bot pick:', err && err.message ? err.message : err); }
-    }, Math.max(350, BOT_PICK_DELAY_MS + 250));
+    if(d.turnTimer){ clearTimeout(d.turnTimer); d.turnTimer=null; }
+    if(d.guardTimer){ clearTimeout(d.guardTimer); d.guardTimer=null; }
+
+    // Se o time já completou 11, pula para o próximo pick.
+    if((team.players||[]).length >= PICK_ROUNDS){
+      d.index++;
+      continue;
+    }
+
+    d.options = makeOptions(room, team, 10);
+
+    // Humano: emite estado e aguarda escolha. Timer humano continua existindo.
+    if(team.human){
+      const delay = 20000;
+      const turnIndex = d.index;
+      d.turnEndsAt = Date.now() + delay;
+      emitDraftState(room, team);
+
+      const safeAutoPick = () => {
+        if(room.phase!=='draft' || !room.draft || room.draft.finalized) return;
+        if(room.draft.index !== turnIndex) return;
+        autoPick(room, team.id, turnIndex);
+      };
+      d.turnTimer=setTimeout(safeAutoPick, delay);
+      d.guardTimer=setTimeout(safeAutoPick, delay + 1500);
+      return;
+    }
+
+    // BOT: não aguarda timer. Emite o estado só para atualizar a tela e aplica o pick agora.
+    d.turnEndsAt = Date.now();
+    emitDraftState(room, team);
+
+    const ok = forceCurrentPick(room);
+    if(!ok){
+      // Se nem a escolha forçada conseguiu, pula para não travar o draft.
+      d.index++;
+    }
+
+    // forceCurrentPick chama advanceDraft no final. Para evitar recursão dupla,
+    // encerramos este loop aqui; a próxima chamada continua o fluxo.
+    return;
   }
 
-  const safeAutoPick = () => {
-    if(room.phase!=='draft' || !room.draft || room.draft.finalized) return;
-    if(room.draft.index !== turnIndex) return;
-    autoPick(room, team.id, turnIndex);
-  };
-
-  d.turnTimer=setTimeout(safeAutoPick, delay);
-  // Guard extra: se o primeiro timeout falhar por qualquer motivo, tenta de novo.
-  d.guardTimer=setTimeout(safeAutoPick, delay + 1200);
+  // Proteção absoluta: se algo sair do controle, fecha o draft e vai para o jogo.
+  if(room.phase==='draft') finishDraftPhase(room);
 }
 function autoPick(room, teamId, expectedIndex){
   const d=room.draft;
@@ -559,7 +588,7 @@ function forceCurrentPick(room){
   else advanceDraft(room);
   return true;
 }
-setInterval(draftWatchdog, 500);
+setInterval(draftWatchdog, 250);
 
 io.on('connection', socket=>{
  socket.on('mp:createRoom', ({password,club})=>{ const code=code8(); const room={code,password:String(password||''),hostId:socket.id,phase:'lobby',players:[{id:socket.id,club:club||'Meu Clube',ready:false}]}; rooms.set(code,room); socket.join(code); socket.emit('mp:roomCreated',{code}); emitRoom(room); });

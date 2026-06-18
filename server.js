@@ -420,6 +420,105 @@ function finishRound(room){ room.matches.forEach(m=>{ m.finished=true; applyResu
 function applyResult(s,gf,ga){ s.P++; s.GP+=gf; s.GC+=ga; if(gf>ga){s.V++;s.PTS+=3;s.last='V'}else if(gf===ga){s.E++;s.PTS+=1;s.last='E'}else{s.D++;s.last='D'} }
 
 
+
+// V66 - Trava de segurança definitiva do draft online.
+// Alguns navegadores/rodadas ficavam presos no último bot com o timer visual em 0s.
+// Esta rotina roda no servidor e não depende da tela do cliente: se a vez expirou,
+// força a escolha do time atual; se o draft acabou, inicia as partidas.
+function draftWatchdog(){
+  rooms.forEach(room=>{
+    try{
+      if(!room || room.phase!=='draft' || !room.draft || room.draft.finalized) return;
+      const d=room.draft;
+
+      if(isDraftComplete(room)){
+        finishDraftPhase(room);
+        return;
+      }
+
+      const team=room.teams[d.order[d.index]];
+      if(!team){
+        finishDraftPhase(room);
+        return;
+      }
+
+      // Se por algum motivo um time já estiver completo quando cair novamente nele,
+      // pula esse pick para evitar travamento em 11/11.
+      if((team.players||[]).length >= PICK_ROUNDS){
+        d.index++;
+        if(isDraftComplete(room)) finishDraftPhase(room);
+        else advanceDraft(room);
+        return;
+      }
+
+      const expired = d.turnEndsAt && Date.now() >= d.turnEndsAt + 650;
+      if(!expired) return;
+
+      // Para humano, só força depois de um tempo extra; para bot, força imediatamente.
+      const humanExpired = team.human && Date.now() >= d.turnEndsAt + 5000;
+      if(!team.human || humanExpired){
+        const ok = autoPick(room, team.id, d.index);
+        if(!ok && room.phase==='draft' && room.draft && !room.draft.finalized){
+          forceCurrentPick(room);
+        }
+      }
+    }catch(err){
+      console.error('draftWatchdog error:', err && err.message ? err.message : err);
+    }
+  });
+}
+
+function forceCurrentPick(room){
+  const d=room.draft;
+  if(!d || room.phase!=='draft' || d.finalized) return false;
+  if(isDraftComplete(room)){ finishDraftPhase(room); return true; }
+  const team=room.teams[d.order[d.index]];
+  if(!team){ finishDraftPhase(room); return false; }
+
+  if(d.turnTimer){ clearTimeout(d.turnTimer); d.turnTimer=null; }
+  if(d.guardTimer){ clearTimeout(d.guardTimer); d.guardTimer=null; }
+
+  const slots=openSlots(team);
+  let card=null;
+  const opts=(d.options||[]).slice();
+  card = opts.find(c=>!teamHasIdentity(team,c)) || opts[0];
+  if(!card){
+    const fb=randomAvailableCard(room, team, slots);
+    if(fb) card=cloneCard(fb,0);
+  }
+  if(!card){
+    // Última proteção: não deixa o campeonato morrer se a base acabar.
+    d.index++;
+    if(isDraftComplete(room)) finishDraftPhase(room);
+    else advanceDraft(room);
+    return false;
+  }
+  card={...card};
+  card.id = card.id || ('FORCED_'+Date.now()+'_'+Math.random());
+  card.pos=normPos(card.pos);
+  card.assignedPos=validAssignedPos(team, card, card.assignedPos) || pickPosition(team, card);
+  card.fitStars=adaptationStars(card.pos,card.assignedPos);
+  card.fitLoss=positionPenalty(card,card.assignedPos);
+  card.effectiveOvr=effectiveOvr(card,card.assignedPos);
+  team.players.push(card);
+  d.pickedExact.add(exactCardKey(card));
+
+  const log={
+    club:team.club,
+    teamId:team.id,
+    card:{name:card.name,pos:card.pos,year:card.year,ovr:card.ovr,effectiveOvr:card.effectiveOvr,fitStars:card.fitStars,assignedPos:card.assignedPos},
+    pick:d.index+1,
+    round:Math.floor(d.index/TOTAL_TEAMS)+1
+  };
+  d.pickLog.push(log);
+  d.index++;
+  io.to(room.code).emit('mp:pickMade',{teamId:team.id,club:team.club,card,log,pickLog:d.pickLog.slice(-80),teams:serializeDraftTeams(room),nextIndex:d.index,total:d.order.length});
+  if(isDraftComplete(room)) finishDraftPhase(room);
+  else advanceDraft(room);
+  return true;
+}
+setInterval(draftWatchdog, 500);
+
 io.on('connection', socket=>{
  socket.on('mp:createRoom', ({password,club})=>{ const code=code8(); const room={code,password:String(password||''),hostId:socket.id,phase:'lobby',players:[{id:socket.id,club:club||'Meu Clube',ready:false}]}; rooms.set(code,room); socket.join(code); socket.emit('mp:roomCreated',{code}); emitRoom(room); });
  socket.on('mp:joinRoom', ({code,password,club})=>{ const room=rooms.get(String(code||'')); if(!room) return socket.emit('mp:error','Sala não encontrada'); if(room.password!==String(password||'')) return socket.emit('mp:error','Senha incorreta'); if(room.players.length>=MAX_PLAYERS) return socket.emit('mp:error','Sala cheia'); if(room.phase!=='lobby') return socket.emit('mp:error','Draft já começou'); room.players.push({id:socket.id,club:club||'Clube',ready:false}); socket.join(room.code); emitRoom(room); });

@@ -257,6 +257,35 @@ function finishDraftPhase(room){
   if(!room || !room.draft) return;
   if(room.phase==='match' || room.phase==='standings') return;
   if(room.draft.finalized) return;
+
+  // V67: antes de encerrar, completa qualquer time que tenha ficado 10/11
+  // por erro de ordem/timer. Isso impede travar no último bot e garante jogo.
+  try{
+    room.teams.forEach(team=>{
+      let safety=0;
+      while((team.players||[]).length < PICK_ROUNDS && safety < 20){
+        safety++;
+        const slots=openSlots(team);
+        const base=randomAvailableCard(room, team, slots);
+        if(!base) break;
+        const card=cloneCard(base, safety);
+        card.assignedPos=pickPosition(team, card);
+        card.fitStars=adaptationStars(card.pos,card.assignedPos);
+        card.fitLoss=positionPenalty(card,card.assignedPos);
+        card.effectiveOvr=effectiveOvr(card,card.assignedPos);
+        team.players.push(card);
+        room.draft.pickedExact.add(exactCardKey(card));
+        room.draft.pickLog.push({
+          club:team.club, teamId:team.id,
+          card:{name:card.name,pos:card.pos,year:card.year,ovr:card.ovr,effectiveOvr:card.effectiveOvr,fitStars:card.fitStars,assignedPos:card.assignedPos},
+          pick:Math.min(room.draft.index+1, room.draft.order.length),
+          round:PICK_ROUNDS
+        });
+      }
+    });
+    room.draft.index = room.draft.order.length;
+  }catch(err){ console.error('V67 complete incomplete teams:', err && err.message ? err.message : err); }
+
   room.draft.finalized=true;
   if(room.draft.turnTimer){ clearTimeout(room.draft.turnTimer); room.draft.turnTimer=null; }
   if(room.draft.guardTimer){ clearTimeout(room.draft.guardTimer); room.draft.guardTimer=null; }
@@ -310,6 +339,19 @@ function advanceDraft(room){
   const turnIndex = d.index;
   d.turnEndsAt = Date.now() + delay;
   emitDraftState(room, team);
+
+  // V67: bot não pode depender de timer visual nem de estado do navegador.
+  // Sempre que a vez for de bot, o servidor agenda uma escolha forçada curta
+  // usando o índice atual como trava contra duplicidade.
+  if(!team.human){
+    setTimeout(()=>{
+      try{
+        if(room.phase==='draft' && room.draft && !room.draft.finalized && room.draft.index===turnIndex){
+          forceCurrentPick(room);
+        }
+      }catch(err){ console.error('V67 force bot pick:', err && err.message ? err.message : err); }
+    }, Math.max(350, BOT_PICK_DELAY_MS + 250));
+  }
 
   const safeAutoPick = () => {
     if(room.phase!=='draft' || !room.draft || room.draft.finalized) return;
@@ -524,6 +566,18 @@ io.on('connection', socket=>{
  socket.on('mp:joinRoom', ({code,password,club})=>{ const room=rooms.get(String(code||'')); if(!room) return socket.emit('mp:error','Sala não encontrada'); if(room.password!==String(password||'')) return socket.emit('mp:error','Senha incorreta'); if(room.players.length>=MAX_PLAYERS) return socket.emit('mp:error','Sala cheia'); if(room.phase!=='lobby') return socket.emit('mp:error','Draft já começou'); room.players.push({id:socket.id,club:club||'Clube',ready:false}); socket.join(room.code); emitRoom(room); });
  socket.on('mp:startDraft', ({code})=>{ const room=rooms.get(String(code||'')); if(!room || room.hostId!==socket.id) return; fillBots(room); buildDraftOrder(room); room.phase='draft'; emitRoom(room); advanceDraft(room); });
  socket.on('mp:pick', ({code,cardId,assignedPos})=>{ const room=rooms.get(String(code||'')); if(!room || room.phase!=='draft') return; const d=room.draft; if(!d) return; const team=room.teams[d.order[d.index]]; if(!team || !team.human || team.id!==socket.id) return socket.emit('mp:error','Ainda não é sua vez de escolher.'); applyPick(room, socket.id, cardId, assignedPos); });
+
+ // V67: pedido de segurança vindo do cliente quando ele detecta timer em 0 no bot.
+ socket.on('mp:forcePick', ({code})=>{
+   const room=rooms.get(String(code||''));
+   if(!room || room.phase!=='draft' || !room.draft || room.draft.finalized) return;
+   const d=room.draft;
+   const team=room.teams[d.order[d.index]];
+   if(!team){ finishDraftPhase(room); return; }
+   if(!team.human || Date.now() >= (d.turnEndsAt||0) + 3000){
+     forceCurrentPick(room);
+   }
+ });
 
  socket.on('mp:changeFormation', ({code,formation})=>{
    const room=rooms.get(String(code||''));

@@ -3622,7 +3622,13 @@ function renderMpPitch(){
      const txt=by('mpDraftTimerText'), bar=by('mpDraftTimerBar');
      if(txt) txt.textContent=sec+'s';
      if(bar) bar.style.width=Math.max(0,Math.min(100,left/total*100))+'%';
-     if(left<=0 && mpDraftTimerInterval){ clearInterval(mpDraftTimerInterval); mpDraftTimerInterval=null; }
+     if(left<=0 && mpDraftTimerInterval){
+       clearInterval(mpDraftTimerInterval); mpDraftTimerInterval=null;
+       // V67: se a tela detectar bot em 0s, pede ao servidor para forçar a escolha.
+       if(d && d.human===false && socket && roomCode){
+         try{ socket.emit('mp:forcePick',{code:roomCode}); }catch(e){}
+       }
+     }
    };
    tick(); mpDraftTimerInterval=setInterval(tick,200);
  }

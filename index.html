@@ -3563,7 +3563,7 @@ function renderMpPitch(){
    const slots=need.map(pos=>{occ[pos]=(occ[pos]||0)+1; let key=pos; if(pos==='ZC'&&totalNeed[pos]>1) key='ZC'+occ[pos]; if(pos==='MC'&&totalNeed[pos]>1) key='MC'+occ[pos]; return {pos,key};});
    const players=(myTeam.players||[]).slice(); const used={};
    const formBtns=['4-3-3','4-4-2','4-1-3-2','4-5-1','3-5-2','4-1-2-3','5-3-2','4-2-3-1','4-3-1-2','3-4-3','5-2-1-2','3-4-1-2'].map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
-   return '<div class="mpFormBar v60"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField v60Portrait"><div class="v60PitchTexture"></div><div class="v60PitchLines"><span class="line mid"></span><span class="circle center"></span><span class="spot center"></span><span class="box top big"></span><span class="box top small"></span><span class="arc top"></span><span class="box bottom big"></span><span class="box bottom small"></span><span class="arc bottom"></span><span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span></div>'+slots.map((sl,i)=>{
+   return '<div class="mpFormBar v60"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField v60Portrait">'+slots.map((sl,i)=>{
      const p=players.find((x,j)=>!used[j] && mpNormPos(x.assignedPos||x.pos)===sl.pos);
      if(p){ const idx=players.indexOf(p); used[idx]=true; }
      const xy=coords[sl.key]||coords[sl.pos]||[50,50];
@@ -4170,48 +4170,6 @@ function renderMpPitch(){
 @media(max-width:1500px){#mpOverlay.v60View .v60Shell{grid-template-columns:190px 280px minmax(620px,1fr) 250px!important;gap:6px!important}#mpOverlay.v60View .mpCardGridV60{gap:7px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card{width:96px!important;min-width:96px!important;height:128px!important;min-height:128px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card .mpMiniPortrait{width:54px!important;height:62px!important;margin-top:24px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card b{font-size:10px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card small,#mpOverlay.v60View .mpPitchSlot.filled.v60Card em{font-size:9px!important}#mpOverlay.v60View .mpCardV33.v60Choice .mpCardShadow{width:46px!important;height:58px!important}#mpOverlay.v60View .mpCardV33.v60Choice .name{font-size:10px!important}}
 </style>
 
-
-
-<style id="v60-straight-online-field-fix">
-/* V60 FIX - corrige apenas o campo do draft online: remove a perspectiva/torto e mantém o padrão escuro/premium */
-#mpOverlay.v60View .mpDraftField.v60Portrait{
-  background:#041009!important;
-  background-image:
-    radial-gradient(circle at 50% 50%, rgba(75,145,62,.24), transparent 42%),
-    linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px),
-    repeating-linear-gradient(90deg, rgba(37,105,49,.26) 0 8.33%, rgba(18,68,32,.26) 8.33% 16.66%),
-    linear-gradient(180deg,#0c321d 0%,#0a2b18 48%,#092616 100%)!important;
-  background-size:100% 100%, 8.33% 100%, 100% 100%, 100% 100%!important;
-  background-position:center!important;
-  border:0!important;
-  box-shadow:inset 0 0 80px rgba(0,0,0,.58), inset 0 0 0 1px rgba(242,201,76,.18)!important;
-  clip-path:none!important;
-  overflow:hidden!important;
-}
-#mpOverlay.v60View .mpDraftField.v60Portrait:before,
-#mpOverlay.v60View .mpDraftField.v60Portrait:after{display:none!important;content:none!important;}
-#mpOverlay.v60View .v60PitchTexture{
-  position:absolute!important;inset:0!important;z-index:0!important;pointer-events:none!important;
-  background:radial-gradient(circle at 50% 44%,rgba(255,255,255,.08),transparent 2px),radial-gradient(circle at 22% 28%,rgba(255,255,255,.035),transparent 1px),radial-gradient(circle at 78% 70%,rgba(255,255,255,.03),transparent 1px);
-  background-size:110px 110px,70px 70px,90px 90px!important;opacity:.22!important;mix-blend-mode:screen!important;
-}
-#mpOverlay.v60View .v60PitchLines{position:absolute!important;inset:4.5% 4.5%!important;z-index:1!important;pointer-events:none!important;border:2px solid rgba(166,205,111,.42)!important;box-shadow:0 0 18px rgba(0,0,0,.22)!important;}
-#mpOverlay.v60View .v60PitchLines .line,#mpOverlay.v60View .v60PitchLines .circle,#mpOverlay.v60View .v60PitchLines .spot,#mpOverlay.v60View .v60PitchLines .box,#mpOverlay.v60View .v60PitchLines .arc,#mpOverlay.v60View .v60PitchLines .corner{position:absolute!important;display:block!important;}
-#mpOverlay.v60View .v60PitchLines .mid{left:0!important;right:0!important;top:50%!important;height:2px!important;background:rgba(166,205,111,.34)!important;transform:translateY(-50%)!important;}
-#mpOverlay.v60View .v60PitchLines .center.circle{left:50%!important;top:50%!important;width:24%!important;aspect-ratio:1/1!important;border:2px solid rgba(166,205,111,.38)!important;border-radius:50%!important;transform:translate(-50%,-50%)!important;}
-#mpOverlay.v60View .v60PitchLines .center.spot{left:50%!important;top:50%!important;width:8px!important;height:8px!important;border-radius:50%!important;background:rgba(166,205,111,.52)!important;transform:translate(-50%,-50%)!important;}
-#mpOverlay.v60View .v60PitchLines .box.big{left:28%!important;width:44%!important;height:14.5%!important;border:2px solid rgba(166,205,111,.34)!important;}
-#mpOverlay.v60View .v60PitchLines .box.small{left:40%!important;width:20%!important;height:7%!important;border:2px solid rgba(166,205,111,.34)!important;}
-#mpOverlay.v60View .v60PitchLines .box.top{top:-2px!important;border-top:0!important;}
-#mpOverlay.v60View .v60PitchLines .box.bottom{bottom:-2px!important;border-bottom:0!important;}
-#mpOverlay.v60View .v60PitchLines .arc{left:50%!important;width:18%!important;aspect-ratio:1/1!important;border:2px solid rgba(166,205,111,.32)!important;border-radius:50%!important;transform:translateX(-50%)!important;}
-#mpOverlay.v60View .v60PitchLines .arc.top{top:10.5%!important;clip-path:inset(58% 0 0 0)!important;}
-#mpOverlay.v60View .v60PitchLines .arc.bottom{bottom:10.5%!important;clip-path:inset(0 0 58% 0)!important;}
-#mpOverlay.v60View .v60PitchLines .corner{width:24px!important;height:24px!important;border:2px solid rgba(166,205,111,.34)!important;border-radius:50%!important;}
-#mpOverlay.v60View .v60PitchLines .c1{left:-13px!important;top:-13px!important}.v60PitchLines .c2{right:-13px!important;top:-13px!important}.v60PitchLines .c3{left:-13px!important;bottom:-13px!important}.v60PitchLines .c4{right:-13px!important;bottom:-13px!important}
-#mpOverlay.v60View .mpPitchSlot{z-index:5!important;}
-</style>
-
 </body>
 </html>
 
@@ -4632,5 +4590,20 @@ function renderMpPitch(){
 
 
 
+
+<style id="v62-campo-linhas-retas">
+/* V62 - corrige somente as linhas do campo do draft online: campo reto, sem perspectiva torta */
+#mpOverlay.v60View .mpDraftField.v60Portrait{
+  background:#04080d url('assets/pitch-portrait.png') center/100% 100% no-repeat!important;
+  border:0!important;
+  box-shadow:inset 0 0 70px rgba(0,0,0,.45)!important;
+}
+#mpOverlay.v60View .mpDraftField.v60Portrait:before,
+#mpOverlay.v60View .mpDraftField.v60Portrait:after,
+#mpOverlay.v60View .mpDraftField.v60Portrait .mpCenterCircle{
+  display:none!important;
+  content:none!important;
+}
+</style>
 </body>
 </html>

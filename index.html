@@ -3539,59 +3539,50 @@ function renderMpPitch(){
      return '<div class="mpDraftOrderRow'+active+'"><span class="num">'+(i+1)+'</span><span class="club">'+mpEsc(t.club)+'</span><span class="count">'+(t.count||0)+'/11</span></div>';
    }).join('')+'</div><div class="mpRoundBox"><b>Rodada '+round+' / 11</b><span>Serpente: '+dir+'</span></div></aside>';
  }
-
  function renderMpPitchV33(){
    if(!mpCurrentDraft) return '';
    const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId) || {players:[],formation:'4-3-3'};
    const formation=myTeam.formation||'4-3-3';
    const coordMap={
-     '4-3-3': {GK:[50,90],LE:[18,77],ZC1:[39,77],ZC2:[61,77],LD:[82,77],MC:[34,56],VOL:[66,56],MAT:[50,43],PE:[22,23],CA:[50,16],PD:[78,23]},
-     '4-4-2': {GK:[50,90],LE:[18,77],ZC1:[39,77],ZC2:[61,77],LD:[82,77],ME:[20,57],MC1:[39,59],MC2:[61,59],MD:[80,57],CA:[42,19],SA:[58,19]},
-     '4-1-3-2': {GK:[50,90],LE:[18,77],ZC1:[39,77],ZC2:[61,77],LD:[82,77],VOL:[50,64],ME:[22,50],MAT:[50,43],MD:[78,50],CA:[42,19],SA:[58,19]},
-     '4-5-1': {GK:[50,90],LE:[18,77],ZC1:[39,77],ZC2:[61,77],LD:[82,77],VOL:[50,64],MC:[34,56],MAT:[50,44],ME:[21,50],MD:[79,50],CA:[50,16]},
-     '3-5-2': {GK:[50,90],ZC1:[30,78],ZC2:[50,80],ZC3:[70,78],ME:[18,58],MC:[36,59],MAT:[50,44],VOL:[64,59],MD:[82,58],CA:[42,19],SA:[58,19]},
-     '4-1-2-3': {GK:[50,90],LE:[18,77],ZC1:[39,77],ZC2:[61,77],LD:[82,77],VOL:[50,65],MC1:[38,56],MC2:[62,56],PE:[22,23],CA:[50,16],PD:[78,23]},
-     '5-3-2': {GK:[50,90],LE:[12,77],ZC1:[32,78],ZC2:[50,81],ZC3:[68,78],LD:[88,77],MC:[37,59],MAT:[50,45],VOL:[63,59],CA:[42,19],SA:[58,19]},
-     '4-2-3-1': {GK:[50,90],LE:[18,77],ZC1:[39,77],ZC2:[61,77],LD:[82,77],VOL:[38,64],MC:[62,64],ME:[22,47],MAT:[50,42],MD:[78,47],CA:[50,16]},
-     '4-3-1-2': {GK:[50,90],LE:[18,77],ZC1:[39,77],ZC2:[61,77],LD:[82,77],MC1:[35,61],VOL:[65,61],MC2:[50,54],MAT:[50,42],CA:[42,19],SA:[58,19]},
-     '3-4-3': {GK:[50,90],ZC1:[30,78],ZC2:[50,81],ZC3:[70,78],ME:[19,58],MC:[38,61],VOL:[62,61],MD:[81,58],PE:[22,23],CA:[50,16],PD:[78,23]},
-     '5-2-1-2': {GK:[50,90],LE:[12,77],ZC1:[32,78],ZC2:[50,81],ZC3:[68,78],LD:[88,77],MC:[38,63],VOL:[62,63],MAT:[50,43],CA:[42,19],SA:[58,19]},
-     '3-4-1-2': {GK:[50,90],ZC1:[30,78],ZC2:[50,81],ZC3:[70,78],ME:[19,59],MC:[38,63],VOL:[62,63],MD:[81,59],MAT:[50,43],CA:[42,19],SA:[58,19]}
+     '4-3-3': {GK:[50,90],LE:[16,74],ZC1:[36,76],ZC2:[64,76],LD:[84,74],VOL:[62,57],MC:[38,52],MAT:[50,38],PE:[20,20],CA:[50,14],PD:[80,20]},
+     '4-4-2': {GK:[50,90],LE:[16,74],ZC1:[36,76],ZC2:[64,76],LD:[84,74],ME:[18,48],MC1:[38,56],MC2:[62,56],MD:[82,48],CA:[42,18],SA:[58,18]},
+     '4-1-3-2': {GK:[50,90],LE:[16,74],ZC1:[36,76],ZC2:[64,76],LD:[84,74],VOL:[50,62],ME:[20,45],MAT:[50,39],MD:[80,45],CA:[42,18],SA:[58,18]},
+     '4-5-1': {GK:[50,90],LE:[16,74],ZC1:[36,76],ZC2:[64,76],LD:[84,74],VOL:[50,61],MC:[35,52],MAT:[50,40],ME:[19,46],MD:[81,46],CA:[50,15]},
+     '3-5-2': {GK:[50,90],ZC1:[30,76],ZC2:[50,79],ZC3:[70,76],ME:[16,52],MC:[36,58],MAT:[50,42],VOL:[64,58],MD:[84,52],CA:[42,18],SA:[58,18]},
+     '4-1-2-3': {GK:[50,90],LE:[16,74],ZC1:[36,76],ZC2:[64,76],LD:[84,74],VOL:[50,63],MC1:[38,52],MC2:[62,52],PE:[20,20],CA:[50,14],PD:[80,20]},
+     '5-3-2': {GK:[50,90],LE:[12,74],ZC1:[30,76],ZC2:[50,79],ZC3:[70,76],LD:[88,74],MC:[36,56],MAT:[50,41],VOL:[64,56],CA:[42,18],SA:[58,18]},
+     '4-2-3-1': {GK:[50,90],LE:[16,74],ZC1:[36,76],ZC2:[64,76],LD:[84,74],VOL:[38,61],MC:[62,61],ME:[20,40],MAT:[50,36],MD:[80,40],CA:[50,14]},
+     '4-3-1-2': {GK:[50,90],LE:[16,74],ZC1:[36,76],ZC2:[64,76],LD:[84,74],MC1:[34,58],VOL:[66,58],MC2:[50,49],MAT:[50,36],CA:[42,18],SA:[58,18]},
+     '3-4-3': {GK:[50,90],ZC1:[30,76],ZC2:[50,79],ZC3:[70,76],ME:[18,55],MC:[38,59],VOL:[62,59],MD:[82,55],PE:[20,20],CA:[50,14],PD:[80,20]},
+     '5-2-1-2': {GK:[50,90],LE:[12,74],ZC1:[30,76],ZC2:[50,79],ZC3:[70,76],LD:[88,74],MC:[38,61],VOL:[62,61],MAT:[50,40],CA:[42,18],SA:[58,18]},
+     '3-4-1-2': {GK:[50,90],ZC1:[30,76],ZC2:[50,79],ZC3:[70,76],ME:[18,55],MC:[38,61],VOL:[62,61],MD:[82,55],MAT:[50,40],CA:[42,18],SA:[58,18]}
    };
    const coords=coordMap[formation]||coordMap['4-3-3'];
    const need=mpFormationNeed(formation); const occ={}; const totalNeed={}; need.forEach(x=>totalNeed[x]=(totalNeed[x]||0)+1);
    const slots=need.map(pos=>{occ[pos]=(occ[pos]||0)+1; let key=pos; if(pos==='ZC'&&totalNeed[pos]>1) key='ZC'+occ[pos]; if(pos==='MC'&&totalNeed[pos]>1) key='MC'+occ[pos]; return {pos,key};});
    const players=(myTeam.players||[]).slice(); const used={};
    const formBtns=['4-3-3','4-4-2','4-1-3-2','4-5-1','3-5-2','4-1-2-3','5-3-2','4-2-3-1','4-3-1-2','3-4-3','5-2-1-2','3-4-1-2'].map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
-   return '<div class="mpFormBar v60"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField v60Portrait">'+slots.map((sl,i)=>{
+   return '<div class="mpFormBar"><span>Formação</span>'+formBtns+'</div><div class="mpFieldWrap mpDraftField"><div class="mpCenterCircle"></div>'+slots.map((sl,i)=>{
      const p=players.find((x,j)=>!used[j] && mpNormPos(x.assignedPos||x.pos)===sl.pos);
      if(p){ const idx=players.indexOf(p); used[idx]=true; }
      const xy=coords[sl.key]||coords[sl.pos]||[50,50];
-     if(p){
-       const st=p.fitStars||adaptationStars(p.pos,sl.pos);
-       const ppos=mpEsc(sl.pos);
-       return '<div class="mpPitchSlot filled v60Card" style="left:'+xy[0]+'%;top:'+xy[1]+'%"><div class="mpCardPos">'+ppos+'</div><div class="mpMiniPortrait"></div><div class="mpMiniText"><b>'+mpEsc(cardNameV60(p.name))+'</b><small>'+ppos+' • '+mpEsc(ovOfV60(p))+'</small><em>'+starsHtml(st)+'</em></div></div>';
-     }
-     return '<div class="mpPitchSlot empty v60Empty" style="left:'+xy[0]+'%;top:'+xy[1]+'%"><b>'+mpEsc(sl.pos)+'</b></div>';
+     const label=p?mpEsc(shortName(p.name)):mpEsc(sl.pos);
+     const sub=p?(mpEsc(sl.pos)+' • '+starsHtml(p.fitStars||adaptationStars(p.pos,sl.pos))):'';
+     return '<div class="mpPitchSlot '+(p?'filled':'')+'" style="left:'+xy[0]+'%;top:'+xy[1]+'%"><b>'+label+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
    }).join('')+'</div>';
  }
- function cardNameV60(name){
+ function shortName(name){
    const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
    if(parts.length<=2) return parts.join(' ');
-   const last=parts[parts.length-1];
-   if(last.length<=3 && parts.length>2) return parts[0]+' '+parts[1];
-   return parts[0]+' '+last;
+   return parts[0]+' '+parts[parts.length-1];
  }
- function ovOfV60(p){return p.finalOv||p.ovFinal||p.adjustedOvr||p.ovr||p.ov||p.rating||p.overall||'--';}
- function shortName(name){return cardNameV60(name);}
  function mpDraftCardHtmlV33(c,readonly=false){
+   const kit=(typeof kitForPlayer==='function')?kitForPlayer(c):'👕';
    const click=readonly?'':' onclick="MP.pick(\''+mpEsc(c.id)+'\')"';
-   const pos=mpEsc(mpNormPos(c.pos));
-   const clubYear=mpEsc((c.club||'HISTÓRICO').toUpperCase()+' • '+c.year);
-   return '<div class="mpCardV33 v60Choice '+(readonly?'readonly':'')+'"'+click+'><span class="tag '+pos+'">'+pos+'</span><div class="mpCardShadow"></div><div class="name">'+mpEsc(cardNameV60(c.name).toUpperCase())+'</div><div class="year">'+clubYear+'</div></div>';
+   return '<div class="mpCardV33 '+(readonly?'readonly':'')+'"'+click+'><span class="tag '+mpEsc(mpNormPos(c.pos))+'">'+mpEsc(mpNormPos(c.pos))+'</span><span class="ball">⚽</span><div class="kit">'+kit+'</div><div class="name">'+mpEsc(c.name).toUpperCase()+'</div><div class="year">'+mpEsc(c.club||'HISTÓRICO').toUpperCase()+' • '+mpEsc(c.year)+'</div></div>';
  }
  function renderDraft(d){
-   by('mpOverlay').classList.add('draftView','v60View');
+   by('mpOverlay').classList.add('draftView');
    mpCurrentDraft=d;
    mpLatestTeams=d.teams||[];
    show('mpDraft');
@@ -3600,15 +3591,16 @@ function renderMpPitch(){
    by('mpDraftTitle').textContent='';
    by('mpDraftSub').textContent='';
    by('mpDraftTeams').innerHTML='';
-   const optionsTitle=isMe?'Escolha um jogador':(!d.human?'Opções do bot':'Aguardando player');
-   const optionsHtml=d.human && !isMe
-     ? '<aside class="mpDraftPanel mpPickColumn"><div class="mpChoiceTitle">'+optionsTitle+'</div><div class="mpWaiting slim"><div><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">Esse player está escolhendo agora.</p></div></div></aside>'
-     : '<aside class="mpDraftPanel mpPickColumn"><div class="mpChoiceTitle">'+optionsTitle+'</div><div class="mpChoiceSub">'+(isMe?'Clique em uma carta':'Cartas que apareceram para o bot')+'</div><div id="mpOptionsInner" class="mpCardGridV60">'+(d.options||[]).slice(0,10).map(c=>mpDraftCardHtmlV33(c,!isMe)).join('')+'</div></aside>';
+   const optionsHtml=isMe
+     ? '<div class="mpPickHeader">Escolha um jogador para o seu time</div><div id="mpOptionsInner" class="mpCardGridV33">'+(d.options||[]).slice(0,10).map(c=>mpDraftCardHtmlV33(c,false)).join('')+'</div>'
+     : (!d.human
+        ? '<div class="mpPickHeader">'+mpEsc(d.club)+' está escolhendo - 1s</div><div class="mpBotChoosing">Cartas que apareceram para o bot</div><div id="mpOptionsInner" class="mpCardGridV33">'+(d.options||[]).slice(0,10).map(c=>mpDraftCardHtmlV33(c,true)).join('')+'</div>'
+        : '<div class="mpPickHeader">Aguardando escolha</div><div class="mpWaiting"><div><h2>'+mpEsc(d.club)+'</h2><p class="mpSub">Esse player está escolhendo agora.</p></div></div>');
    const myTeamHeader=(d.teams||[]).find(t=>t.id===myId)||{formation:'4-3-3',count:0};
-   const main='<main class="mpDraftPanel mpMainPanel v60Main">'+renderMpPitchV33()+'</main>';
-   const feed='<aside class="mpDraftPanel v60Feed"><div class="mpPanelHead">📋 Histórico do Draft</div>'+renderPickFeed(d.pickLog)+'</aside>';
+   const main='<main class="mpDraftPanel mpMainPanel"><div class="mpTeamHeader"><div class="mpTeamTitle"><div class="mpShield">♙</div><div><h2>Seu Time</h2><p>'+mpEsc(myTeamHeader.formation||'4-3-3')+'</p></div></div><div class="mpStatsMini"><div class="mpStatBox">Entrosamento<b>0</b></div><div class="mpStatBox">Elenco<b>'+mpEsc(myTeamHeader.count||0)+'/11</b></div></div></div>'+renderMpPitchV33()+optionsHtml+'</main>';
+   const feed='<aside class="mpDraftPanel"><div class="mpPanelHead">📋 Histórico do Draft</div>'+renderPickFeed(d.pickLog)+'</aside>';
    by('mpOptions').className='';
-   by('mpOptions').innerHTML='<div class="mpMockTop v60Top"><div class="mpBrand"><div class="mpBrandIcon">⚽</div><div class="mpBrandText"><strong>ULTIMATE<br>DRAFT <em>FC</em></strong><span>ONLINE</span></div></div><div class="mpTopTeam"><span>Seu Time</span><b>'+mpEsc(myTeamHeader.formation||'4-3-3')+'</b><small>Rodada '+round+' • Pick '+(d.index+1)+' / '+d.total+' — Vez de: '+mpEsc(d.club)+(isMe?' — SUA VEZ':'')+'</small></div><div class="mpTopStats"><div class="mpTopStat"><span>TEMPO</span><b id="mpDraftTimerText">20s</b><div class="mpTopBarTiny"><div id="mpDraftTimerBar"></div></div></div><div class="mpTopStat"><span>ENTROSAMENTO</span><b>0%</b><div class="mpGreenBar"><i></i></div></div><div class="mpTopStat"><span>OVR DO TIME</span><b>--</b><em>★★★★★</em></div><button class="mpBtn secondary mpBackBtn" onclick="MP.close()">Voltar ao solo</button></div></div><div class="mpDraftShell v60Shell">'+renderDraftOrder(d)+optionsHtml+main+feed+'</div>';
+   by('mpOptions').innerHTML='<div class="mpMockTop"><div class="mpBrand"><div class="mpBrandIcon">⚽</div><div class="mpBrandText"><strong>ULTIMATE<br>DRAFT <em>FC</em></strong><span>ONLINE</span></div></div><div class="mpTopTeam"><span>Seu Time</span><b>'+mpEsc(myTeamHeader.formation||'4-3-3')+'</b><small>Rodada '+round+' • Pick '+(d.index+1)+' / '+d.total+' — Vez de: '+mpEsc(d.club)+(isMe?' — SUA VEZ':'')+'</small></div><div class="mpTopStats"><div class="mpTopStat"><span>TEMPO</span><b id="mpDraftTimerText">20s</b><div class="mpTopBarTiny"><div id="mpDraftTimerBar"></div></div></div><div class="mpTopStat"><span>ENTROSAMENTO</span><b>0%</b><div class="mpGreenBar"><i></i></div></div><div class="mpTopStat"><span>OVR DO TIME</span><b>--</b><em>★★★★★</em></div><button class="mpBtn secondary mpBackBtn" onclick="MP.close()">Voltar ao solo</button></div></div><div class="mpDraftShell">'+renderDraftOrder(d)+main+feed+'</div>';
    startMpDraftTimer(d);
  }
  let mpDraftTimerInterval=null;
@@ -4099,77 +4091,6 @@ function renderMpPitch(){
 </script>
 
 
-
-<style>
-/* V60 - remodelação de qualidade máxima: opções 5x2 ao lado, campo em pé, cards premium */
-#mpOverlay.v60View{padding:8px!important;background:#02060b!important;overflow:hidden!important;}
-#mpOverlay.v60View>.mpBox{max-width:1920px!important;width:100%!important;height:calc(100vh - 16px)!important;padding:0!important;background:linear-gradient(180deg,#050b12,#02050a)!important;border:1px solid rgba(242,201,76,.38)!important;border-radius:8px!important;overflow:hidden!important;}
-#mpOverlay.v60View .mpGlobalHeader{display:none!important;}
-#mpOverlay.v60View #mpDraft{margin:0!important;height:100%!important;}
-#mpOverlay.v60View .mpMockTop.v60Top{height:74px!important;display:grid!important;grid-template-columns:210px minmax(300px,1fr) auto!important;align-items:center!important;gap:18px!important;padding:8px 20px!important;border-bottom:1px solid rgba(242,201,76,.55)!important;background:linear-gradient(180deg,#070d15,#02060a)!important;}
-#mpOverlay.v60View .mpBrand{display:flex!important;align-items:center!important;gap:10px!important;}
-#mpOverlay.v60View .mpBrandIcon{width:38px!important;height:38px!important;border:1px solid #f2c94c!important;border-radius:8px!important;display:grid!important;place-items:center!important;background:#0d1724!important;}
-#mpOverlay.v60View .mpBrandText strong{font-size:20px!important;line-height:.84!important;letter-spacing:.5px!important;color:#fff!important;display:block!important;}
-#mpOverlay.v60View .mpBrandText em{color:#f2c94c!important;font-style:normal!important;}
-#mpOverlay.v60View .mpBrandText span{font-size:9px!important;letter-spacing:4px!important;color:#f2c94c!important;}
-#mpOverlay.v60View .mpTopTeam span{display:block!important;color:#fff!important;font-size:18px!important;font-weight:1000!important;}
-#mpOverlay.v60View .mpTopTeam b{display:block!important;color:#28ff84!important;font-size:22px!important;line-height:1!important;}
-#mpOverlay.v60View .mpTopTeam small{display:block!important;color:#c9d2e0!important;font-size:11px!important;margin-top:2px!important;}
-#mpOverlay.v60View .mpTopStats{display:flex!important;gap:10px!important;align-items:center!important;}
-#mpOverlay.v60View .mpTopStat{width:116px!important;height:48px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:7px!important;background:#050a11!important;text-align:center!important;padding:6px 8px!important;}
-#mpOverlay.v60View .mpTopStat span{font-size:9px!important;color:#fff!important;font-weight:1000!important;}
-#mpOverlay.v60View .mpTopStat b{display:block!important;font-size:18px!important;color:#f2c94c!important;line-height:1.15!important;}
-#mpOverlay.v60View .mpBackBtn{height:48px!important;padding:0 18px!important;border-radius:8px!important;background:#111c2b!important;color:#fff!important;}
-#mpOverlay.v60View .v60Shell{height:calc(100vh - 90px)!important;display:grid!important;grid-template-columns:230px 310px minmax(720px,1fr) 300px!important;gap:8px!important;align-items:stretch!important;padding:8px!important;}
-#mpOverlay.v60View .mpDraftPanel{border:1px solid rgba(242,201,76,.34)!important;border-radius:8px!important;background:linear-gradient(180deg,rgba(5,11,18,.98),rgba(2,6,10,.98))!important;box-shadow:0 18px 45px rgba(0,0,0,.42)!important;overflow:hidden!important;min-height:0!important;}
-#mpOverlay.v60View .mpPanelHead{height:42px!important;padding:0 14px!important;color:#24ff82!important;font-size:14px!important;line-height:1.05!important;background:#050a11!important;border-bottom:1px solid rgba(242,201,76,.24)!important;}
-#mpOverlay.v60View .mpDraftOrderList{height:calc(100% - 120px)!important;max-height:none!important;overflow:hidden!important;padding:6px 0!important;}
-#mpOverlay.v60View .mpDraftOrderRow{min-height:27px!important;grid-template-columns:28px minmax(0,1fr) 42px!important;gap:5px!important;padding:3px 8px!important;font-size:13px!important;border-bottom:0!important;}
-#mpOverlay.v60View .mpDraftOrderRow .num{width:20px!important;height:20px!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:50%!important;display:grid!important;place-items:center!important;color:#fff!important;font-size:12px!important;}
-#mpOverlay.v60View .mpDraftOrderRow.active{margin:2px 6px!important;background:linear-gradient(90deg,rgba(242,201,76,.22),rgba(242,201,76,.05))!important;box-shadow:inset 0 0 0 1px #f2c94c!important;}
-#mpOverlay.v60View .mpDraftOrderRow.active:after{display:none!important;}
-#mpOverlay.v60View .mpRoundBox{height:72px!important;margin:8px 14px!important;padding:10px!important;border-color:rgba(242,201,76,.33)!important;background:#050a11!important;}
-#mpOverlay.v60View .mpRoundBox b{font-size:16px!important;color:#f2c94c!important;}
-#mpOverlay.v60View .mpRoundBox span{font-size:11px!important;color:#fff!important;}
-#mpOverlay.v60View .mpPickColumn{padding:12px!important;display:flex!important;flex-direction:column!important;gap:8px!important;}
-#mpOverlay.v60View .mpChoiceTitle{text-align:center!important;text-transform:uppercase!important;font-weight:1000!important;color:#fff!important;font-size:16px!important;letter-spacing:.5px!important;margin:4px 0 2px!important;}
-#mpOverlay.v60View .mpChoiceSub{text-align:center!important;color:#f2c94c!important;font-size:11px!important;font-weight:900!important;margin-bottom:4px!important;}
-#mpOverlay.v60View .mpCardGridV60{display:grid!important;grid-template-columns:repeat(2,1fr)!important;grid-template-rows:repeat(5,1fr)!important;gap:10px!important;min-height:0!important;height:calc(100vh - 170px)!important;overflow:hidden!important;}
-#mpOverlay.v60View .mpCardV33.v60Choice{height:auto!important;min-height:0!important;width:auto!important;border:0!important;border-radius:14px!important;background:url('assets/card-draft.svg') center/100% 100% no-repeat!important;box-shadow:0 14px 24px rgba(0,0,0,.55),0 0 10px rgba(242,201,76,.12)!important;position:relative!important;overflow:hidden!important;cursor:pointer!important;}
-#mpOverlay.v60View .mpCardV33.v60Choice:hover{transform:translateY(-3px) scale(1.02)!important;filter:brightness(1.12)!important;}
-#mpOverlay.v60View .mpCardV33.v60Choice .tag{position:absolute!important;top:8px!important;left:9px!important;font-size:12px!important;border:1px solid #f2c94c!important;color:#f2c94c!important;background:#060b12!important;border-radius:6px!important;padding:2px 6px!important;z-index:3!important;}
-#mpOverlay.v60View .mpCardV33.v60Choice .mpCardShadow{display:block!important;position:absolute!important;left:50%!important;top:32%!important;transform:translate(-50%,-50%)!important;width:58px!important;height:70px!important;background:url('assets/silhouette.svg') center/contain no-repeat!important;opacity:.74!important;filter:drop-shadow(0 8px 10px rgba(0,0,0,.55))!important;}
-#mpOverlay.v60View .mpCardV33.v60Choice .name{position:absolute!important;left:8px!important;right:8px!important;bottom:34px!important;text-align:center!important;font-size:12px!important;line-height:1.05!important;color:#fff!important;font-weight:1000!important;text-shadow:0 2px 8px #000!important;}
-#mpOverlay.v60View .mpCardV33.v60Choice .year{position:absolute!important;left:8px!important;right:8px!important;bottom:15px!important;text-align:center!important;color:#f2c94c!important;font-size:8px!important;line-height:1!important;font-weight:1000!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
-#mpOverlay.v60View .v60Main{display:flex!important;flex-direction:column!important;padding:0!important;}
-#mpOverlay.v60View .mpFormBar.v60{height:60px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;background:#050a11!important;border-bottom:1px solid rgba(242,201,76,.3)!important;padding:0 12px!important;flex-wrap:wrap!important;}
-#mpOverlay.v60View .mpFormBar.v60 span{font-size:16px!important;font-weight:1000!important;color:#fff!important;margin-right:10px!important;}
-#mpOverlay.v60View .mpFormBtn{height:34px!important;min-width:68px!important;border-radius:8px!important;background:#101a28!important;color:#fff!important;border:1px solid rgba(255,255,255,.16)!important;font-weight:1000!important;font-size:12px!important;}
-#mpOverlay.v60View .mpFormBtn.on{background:linear-gradient(180deg,#ffe278,#d0a328)!important;color:#07090d!important;border-color:#f2c94c!important;}
-#mpOverlay.v60View .mpDraftField.v60Portrait{height:calc(100vh - 150px)!important;min-height:0!important;max-height:none!important;position:relative!important;overflow:hidden!important;background:#04080d url('assets/pitch-portrait.png') center/100% 100% no-repeat!important;border:0!important;box-shadow:inset 0 0 70px rgba(0,0,0,.45)!important;clip-path:none!important;}
-#mpOverlay.v60View .mpDraftField.v60Portrait:before,#mpOverlay.v60View .mpDraftField.v60Portrait:after,#mpOverlay.v60View .mpCenterCircle{display:none!important;}
-#mpOverlay.v60View .mpPitchSlot{position:absolute!important;transform:translate(-50%,-50%)!important;z-index:5!important;}
-#mpOverlay.v60View .mpPitchSlot.empty{width:56px!important;min-width:56px!important;height:26px!important;min-height:26px!important;padding:0!important;border-radius:7px!important;background:linear-gradient(180deg,#111b29,#05090f)!important;border:1px solid #f2c94c!important;box-shadow:0 8px 18px rgba(0,0,0,.55)!important;display:grid!important;place-items:center!important;}
-#mpOverlay.v60View .mpPitchSlot.empty b{font-size:12px!important;color:#f2c94c!important;line-height:1!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card{width:118px!important;min-width:118px!important;max-width:118px!important;height:158px!important;min-height:158px!important;border:0!important;border-radius:16px!important;background:url('assets/card-field.svg') center/100% 100% no-repeat!important;padding:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;overflow:visible!important;box-shadow:0 20px 36px rgba(0,0,0,.58),0 0 16px rgba(242,201,76,.18)!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card:before{display:none!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card .mpCardPos{position:absolute!important;top:9px!important;left:10px!important;color:#59ff8a!important;font-size:12px!important;font-weight:1000!important;text-shadow:0 2px 8px #000!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card .mpMiniPortrait{display:block!important;width:72px!important;height:82px!important;margin:28px auto 0!important;background:url('assets/silhouette.svg') center/contain no-repeat!important;opacity:.88!important;filter:drop-shadow(0 10px 12px rgba(0,0,0,.6))!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card .mpMiniText{position:absolute!important;left:8px!important;right:8px!important;bottom:13px!important;display:flex!important;flex-direction:column!important;align-items:center!important;z-index:4!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card b{font-size:12px!important;line-height:1.05!important;color:#fff!important;text-align:center!important;text-shadow:0 2px 8px #000!important;max-width:100px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card small{font-size:11px!important;line-height:1.05!important;color:#58ff89!important;font-weight:1000!important;margin-top:4px!important;white-space:nowrap!important;}
-#mpOverlay.v60View .mpPitchSlot.filled.v60Card em{font-size:11px!important;line-height:1!important;color:#f2c94c!important;font-style:normal!important;margin-top:3px!important;}
-#mpOverlay.v60View .v60Feed .mpFeedList{height:calc(100vh - 136px)!important;overflow:auto!important;padding:8px!important;}
-#mpOverlay.v60View .mpFeedItem{display:grid!important;grid-template-columns:48px 1fr!important;gap:10px!important;align-items:center!important;min-height:66px!important;border-bottom:1px solid rgba(255,255,255,.08)!important;padding:8px 4px!important;}
-#mpOverlay.v60View .mpFeedAvatar{width:42px!important;height:54px!important;border-radius:8px!important;background:url('assets/card-draft.svg') center/100% 100% no-repeat!important;font-size:0!important;position:relative!important;}
-#mpOverlay.v60View .mpFeedAvatar:after{content:''!important;position:absolute!important;inset:12px 9px 10px!important;background:url('assets/silhouette.svg') center/contain no-repeat!important;opacity:.65!important;}
-#mpOverlay.v60View .mpFeedItem span{color:#21f37d!important;font-size:11px!important;font-weight:900!important;}
-#mpOverlay.v60View .mpFeedItem b{display:block!important;color:#fff!important;font-size:13px!important;line-height:1.05!important;}
-#mpOverlay.v60View .mpFeedItem em{display:block!important;color:#59ff8a!important;font-size:14px!important;font-style:normal!important;font-weight:1000!important;margin-top:2px!important;}
-#mpOverlay.v60View .mpBotChoosing,.mpPickHeader{display:none!important;}
-@media(max-width:1500px){#mpOverlay.v60View .v60Shell{grid-template-columns:190px 280px minmax(620px,1fr) 250px!important;gap:6px!important}#mpOverlay.v60View .mpCardGridV60{gap:7px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card{width:96px!important;min-width:96px!important;height:128px!important;min-height:128px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card .mpMiniPortrait{width:54px!important;height:62px!important;margin-top:24px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card b{font-size:10px!important}#mpOverlay.v60View .mpPitchSlot.filled.v60Card small,#mpOverlay.v60View .mpPitchSlot.filled.v60Card em{font-size:9px!important}#mpOverlay.v60View .mpCardV33.v60Choice .mpCardShadow{width:46px!important;height:58px!important}#mpOverlay.v60View .mpCardV33.v60Choice .name{font-size:10px!important}}
-</style>
-
 </body>
 </html>
 
@@ -4589,6 +4510,127 @@ function renderMpPitch(){
 </script>
 
 
+<style id="v55-visual-assets">
+/* V55 REAL - campo e cards baseados em assets de imagem */
+#mpOverlay.show{background:radial-gradient(circle at 50% -10%,#0c2319 0%,#03070d 48%,#010306 100%)!important;overflow:hidden!important}
+#mpOverlay>.mpBox{max-width:1860px!important;height:calc(100vh - 12px)!important;padding:0!important;background:#02070d!important;border:1px solid rgba(242,201,76,.35)!important;border-radius:12px!important;overflow:hidden!important;box-shadow:0 0 80px rgba(0,0,0,.8)!important}
+#mpDraft{height:100%!important;margin:0!important;overflow:hidden!important}
+.mpMockTop{height:76px!important;display:grid!important;grid-template-columns:270px 1fr auto!important;align-items:center!important;gap:22px!important;padding:8px 18px!important;background:linear-gradient(180deg,#07111d,#03070d)!important;border-bottom:1px solid rgba(242,201,76,.48)!important;box-shadow:0 12px 30px rgba(0,0,0,.45)!important}
+.mpBrand{display:flex!important;align-items:center!important;gap:12px!important}.mpBrandIcon{width:48px!important;height:48px!important;border:2px solid #f2c94c!important;border-radius:12px!important;display:grid!important;place-items:center!important;background:#101a29!important;font-size:24px!important}.mpBrandText strong{font-size:22px!important;line-height:.9!important;letter-spacing:.5px!important}.mpBrandText em{color:#f2c94c!important;font-style:normal!important}.mpBrandText span{display:block;color:#f2c94c!important;font-size:9px!important;letter-spacing:6px!important;margin-top:4px!important}.mpTopTeam span{font-size:23px!important;font-weight:1000!important;color:#fff!important}.mpTopTeam b{display:block;color:#59ff8a!important;font-size:24px!important;line-height:1!important}.mpTopTeam small{font-size:12px!important;color:#b9c5d5!important}.mpTopStats{display:flex!important;align-items:center!important;gap:12px!important}.mpTopStat{width:130px!important;height:54px!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:9px!important;background:linear-gradient(180deg,#07111d,#03070d)!important;text-align:center!important;padding:6px 10px!important}.mpTopStat span{font-size:10px!important;font-weight:1000!important;color:#fff!important}.mpTopStat b{display:block;font-size:18px!important;color:#f2c94c!important;line-height:1.1!important}.mpTopStat em{font-style:normal!important;color:#f2c94c!important;letter-spacing:2px!important}.mpTopBarTiny,.mpGreenBar{height:5px!important;background:#182739!important;border-radius:99px!important;overflow:hidden!important}.mpTopBarTiny div{height:100%;background:#f2c94c!important}.mpGreenBar i{display:block;height:100%;width:42%;background:#28e86a!important}.mpBackBtn{height:48px!important;min-width:120px!important;color:#fff!important;background:#101d31!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:10px!important}
+.mpDraftShell{height:calc(100vh - 82px)!important;display:grid!important;grid-template-columns:225px minmax(980px,1fr) 275px!important;gap:10px!important;padding:8px!important;background:#02070d!important;overflow:hidden!important}.mpDraftPanel{background:linear-gradient(180deg,rgba(7,16,25,.98),rgba(2,7,12,.98))!important;border:1px solid rgba(242,201,76,.36)!important;border-radius:8px!important;overflow:hidden!important;box-shadow:0 20px 50px rgba(0,0,0,.50)!important}.mpPanelHead{height:50px!important;color:#59ff8a!important;background:#050c14!important;border-bottom:1px solid rgba(242,201,76,.34)!important;font-size:16px!important;padding:0 16px!important}.mpDraftOrderList{height:calc(100% - 116px)!important;overflow:hidden!important;padding:8px 0!important}.mpDraftOrderRow{min-height:30px!important;grid-template-columns:28px 1fr 48px!important;padding:3px 12px!important;font-size:13px!important}.mpDraftOrderRow.active{background:linear-gradient(90deg,rgba(242,201,76,.28),rgba(242,201,76,.04))!important;margin:3px 7px!important;box-shadow:inset 0 0 0 1px #f2c94c!important}.mpDraftOrderRow.active:after{display:none!important}.mpRoundBox{margin:8px 14px!important;padding:10px!important}.mpRoundBox b{font-size:17px!important;color:#f2c94c!important}.mpMainPanel{height:100%!important;min-height:0!important;display:flex!important;flex-direction:column!important;background:#02070d!important}.mpTeamHeader{display:none!important}.mpFormBar{height:52px!important;min-height:52px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;background:#050b12!important;border-bottom:1px solid rgba(242,201,76,.32)!important}.mpFormBar span{font-size:19px!important;font-weight:1000!important;color:#fff!important;margin-right:8px!important}.mpFormBtn{height:32px!important;min-width:74px!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.18)!important;background:#0c1623!important;color:#fff!important;font-weight:1000!important}.mpFormBtn.on{background:#f2c94c!important;color:#07101a!important;border-color:#f2c94c!important;box-shadow:0 0 16px rgba(242,201,76,.45)!important}
+.mpDraftField{height:calc(100vh - 392px)!important;min-height:480px!important;max-height:610px!important;position:relative!important;background-image:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.12)),url('assets/pitch-premium.svg')!important;background-size:100% 100%!important;background-position:center!important;border-bottom:1px solid rgba(242,201,76,.38)!important;overflow:visible!important;clip-path:none!important;box-shadow:inset 0 0 95px rgba(0,0,0,.55)!important}.mpDraftField:before,.mpDraftField:after,.mpCenterCircle{display:none!important}
+.mpPitchSlot{position:absolute!important;transform:translate(-50%,-50%)!important;z-index:5!important}.mpPitchSlot:not(.filled){width:72px!important;min-width:72px!important;height:30px!important;min-height:30px!important;padding:0!important;border-radius:8px!important;border:1px solid #f2c94c!important;background:linear-gradient(180deg,#111c2b,#03070d)!important;color:#f2c94c!important;display:grid!important;place-items:center!important;box-shadow:0 11px 18px rgba(0,0,0,.55)!important}.mpPitchSlot:not(.filled) b{font-size:13px!important;color:#f2c94c!important}.mpPitchSlot.filled{width:128px!important;min-width:128px!important;max-width:128px!important;height:174px!important;min-height:174px!important;padding:0!important;border:0!important;border-radius:16px!important;background:url('assets/card-field.svg') center/100% 100% no-repeat!important;box-shadow:0 24px 44px rgba(0,0,0,.62),0 0 22px rgba(242,201,76,.16)!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;overflow:visible!important}.mpPitchSlot.filled:before{display:none!important}.mpMiniPortrait{display:block!important;width:76px!important;height:76px!important;margin:22px auto 9px!important;background:url('assets/silhouette.svg') center/contain no-repeat!important;filter:drop-shadow(0 9px 12px rgba(0,0,0,.55))!important}.mpMiniText{width:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;position:relative!important;z-index:2!important;padding:0 9px!important}.mpPitchSlot.filled b{font-size:13px!important;line-height:1.05!important;max-width:108px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;color:#fff!important;text-align:center!important;text-shadow:0 2px 6px #000!important}.mpPitchSlot.filled small{font-size:12px!important;color:#59ff8a!important;font-weight:1000!important;margin-top:5px!important}.mpPitchSlot.filled em{font-size:12px!important;color:#f2c94c!important;font-style:normal!important;margin-top:3px!important;letter-spacing:0!important}
+.mpPickHeader{height:35px!important;padding:8px!important;background:#03070d!important;color:#fff!important;text-align:center!important;text-transform:uppercase!important;font-size:15px!important;font-weight:1000!important;letter-spacing:.4px!important}.mpBotChoosing{height:22px!important;background:#03070d!important;color:#f2c94c!important;text-align:center!important;font-size:13px!important;font-weight:1000!important}.mpCardGridV33{height:222px!important;min-height:222px!important;display:grid!important;grid-template-columns:repeat(10,minmax(105px,1fr))!important;gap:10px!important;padding:10px 12px!important;background:#03070d!important;border-top:1px solid rgba(242,201,76,.34)!important;overflow:hidden!important}.mpCardV33{height:200px!important;border:0!important;border-radius:15px!important;background:url('assets/card-draft.svg') center/100% 100% no-repeat!important;box-shadow:0 22px 36px rgba(0,0,0,.58)!important;position:relative!important;overflow:visible!important}.mpCardV33:before{display:none!important}.mpCardV33 .tag{position:absolute!important;top:11px!important;left:12px!important;background:#060b12!important;border:1px solid currentColor!important;border-radius:8px!important;padding:4px 7px!important;font-size:12px!important;font-weight:1000!important;z-index:6!important}.mpCardV33 .ball,.mpCardV33 .kit{display:none!important}.mpCardV33 .mpCardShadow{display:block!important;position:absolute!important;top:42px!important;left:50%!important;transform:translateX(-50%)!important;width:88px!important;height:88px!important;background:url('assets/silhouette.svg') center/contain no-repeat!important;filter:drop-shadow(0 10px 14px rgba(0,0,0,.55))!important;z-index:2!important}.mpCardV33 .name{position:absolute!important;left:10px!important;right:10px!important;bottom:42px!important;text-align:center!important;color:#fff!important;font-size:13px!important;line-height:1.05!important;font-weight:1000!important;text-shadow:0 2px 7px #000!important;z-index:5!important}.mpCardV33 .year{position:absolute!important;left:10px!important;right:10px!important;bottom:17px!important;text-align:center!important;color:#f2c94c!important;font-size:9px!important;font-weight:1000!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;z-index:5!important}.mpCardV33:hover{transform:translateY(-5px)!important;filter:brightness(1.08)!important}
+.mpFeedList{height:calc(100vh - 140px)!important;overflow:hidden!important;padding:12px!important}.mpFeedItem{display:grid!important;grid-template-columns:56px 1fr!important;gap:10px!important;padding:10px 0!important;border-bottom:1px solid rgba(255,255,255,.08)!important}.mpFeedAvatar{width:46px!important;height:60px!important;border-radius:9px!important;background:url('assets/card-draft.svg') center/100% 100% no-repeat!important;display:grid!important;place-items:center!important}.mpFeedAvatar:before{content:''!important;width:34px;height:34px;background:url('assets/silhouette.svg') center/contain no-repeat!important;display:block;opacity:.75}.mpFeedItem span{font-size:12px!important;color:#59ff8a!important;font-weight:1000!important}.mpFeedItem b{font-size:15px!important;color:#fff!important;line-height:1.05!important}.mpFeedItem em{display:block!important;color:#59ff8a!important;font-size:15px!important;font-weight:1000!important;margin-top:3px!important}
+@media(max-width:1500px){.mpDraftShell{grid-template-columns:190px minmax(760px,1fr) 230px!important}.mpCardGridV33{grid-template-columns:repeat(10,minmax(82px,1fr))!important;gap:7px!important}.mpCardV33{height:170px!important}.mpCardV33 .mpCardShadow{width:58px!important;height:58px!important;top:38px!important}.mpCardV33 .name{font-size:10px!important;bottom:34px!important}.mpCardV33 .year{font-size:7px!important;bottom:13px!important}.mpPitchSlot.filled{width:108px!important;height:148px!important}.mpMiniPortrait{width:58px!important;height:58px!important;margin-top:18px!important}.mpPitchSlot.filled b{font-size:11px!important}.mpPitchSlot.filled small,.mpPitchSlot.filled em{font-size:10px!important}}
+</style>
+<script id="v55-render-overrides">
+(function(){
+  function esc(s){ return (typeof mpEsc==='function') ? mpEsc(s) : String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function nameShort(n){n=String(n||'').trim();const p=n.split(/\s+/).filter(Boolean);if(p.length<=2)return p.join(' ');const last=p[p.length-1];return (p[0]+' '+last).length<=18?p[0]+' '+last:last;}
+  function ov(p){return p.effectiveOvr||p.ovr||'--'}
+  const F={
+    '4-3-3':[['GK',50,88],['LE',16,72],['ZC',36,73],['ZC',64,73],['LD',84,72],['MC',36,55],['VOL',64,55],['MAT',50,38],['PE',20,21],['CA',50,15],['PD',80,21]],
+    '4-4-2':[['GK',50,88],['LE',16,72],['ZC',36,73],['ZC',64,73],['LD',84,72],['ME',18,52],['MC',37,58],['VOL',63,58],['MD',82,52],['CA',42,19],['SA',58,19]],
+    '4-1-3-2':[['GK',50,88],['LE',16,72],['ZC',36,73],['ZC',64,73],['LD',84,72],['VOL',50,60],['ME',20,46],['MAT',50,38],['MD',80,46],['CA',42,19],['SA',58,19]],
+    '4-5-1':[['GK',50,88],['LE',16,72],['ZC',36,73],['ZC',64,73],['LD',84,72],['VOL',50,60],['MC',35,54],['MAT',50,39],['ME',18,48],['MD',82,48],['CA',50,15]],
+    '3-5-2':[['GK',50,88],['ZC',30,73],['ZC',50,76],['ZC',70,73],['ME',17,53],['MC',36,58],['MAT',50,40],['VOL',64,58],['MD',83,53],['CA',42,19],['SA',58,19]],
+    '4-1-2-3':[['GK',50,88],['LE',16,72],['ZC',36,73],['ZC',64,73],['LD',84,72],['VOL',50,62],['MC',36,53],['MC',64,53],['PE',20,21],['CA',50,15],['PD',80,21]],
+    '5-3-2':[['GK',50,88],['LE',10,72],['ZC',30,73],['ZC',50,76],['ZC',70,73],['LD',90,72],['MC',36,58],['MAT',50,40],['VOL',64,58],['CA',42,19],['SA',58,19]],
+    '4-2-3-1':[['GK',50,88],['LE',16,72],['ZC',36,73],['ZC',64,73],['LD',84,72],['VOL',38,60],['MC',62,60],['ME',20,42],['MAT',50,37],['MD',80,42],['CA',50,15]],
+    '4-3-1-2':[['GK',50,88],['LE',16,72],['ZC',36,73],['ZC',64,73],['LD',84,72],['MC',34,59],['VOL',66,59],['MC',50,50],['MAT',50,37],['CA',42,19],['SA',58,19]],
+    '3-4-3':[['GK',50,88],['ZC',30,73],['ZC',50,76],['ZC',70,73],['ME',17,55],['MC',37,60],['VOL',63,60],['MD',83,55],['PE',20,21],['CA',50,15],['PD',80,21]],
+    '5-2-1-2':[['GK',50,88],['LE',10,72],['ZC',30,73],['ZC',50,76],['ZC',70,73],['LD',90,72],['MC',38,60],['VOL',62,60],['MAT',50,39],['CA',42,19],['SA',58,19]],
+    '3-4-1-2':[['GK',50,88],['ZC',30,73],['ZC',50,76],['ZC',70,73],['ME',17,55],['MC',38,61],['VOL',62,61],['MD',83,55],['MAT',50,39],['CA',42,19],['SA',58,19]]
+  };
+  window.mpFormationNeed=function(f){return (F[String(f||'4-3-3')]||F['4-3-3']).map(x=>x[0]);};
+  window.renderMpPitchV33=function(){
+    if(!window.mpCurrentDraft) return '';
+    const myTeam=(mpCurrentDraft.teams||[]).find(t=>t.id===myId)||{players:[],formation:'4-3-3'};
+    const formation=myTeam.formation||'4-3-3'; const slots=F[formation]||F['4-3-3'];
+    const btns=Object.keys(F).map(f=>'<button class="mpFormBtn '+(f===formation?'on':'')+'" onclick="MP.changeFormation(\''+f+'\')">'+f+'</button>').join('');
+    const players=(myTeam.players||[]).slice(); const used={};
+    return '<div class="mpFormBar"><span>Formação</span>'+btns+'</div><div class="mpFieldWrap mpDraftField">'+slots.map((sl)=>{const pos=sl[0],x=sl[1],y=sl[2];const p=players.find((pl,j)=>!used[j]&&mpNormPos(pl.assignedPos||pl.pos)===pos);if(p){used[players.indexOf(p)]=true;const st=p.fitStars||adaptationStars(p.pos,pos);return '<div class="mpPitchSlot filled" style="left:'+x+'%;top:'+y+'%"><div class="mpMiniPortrait"></div><div class="mpMiniText"><b>'+esc(nameShort(p.name))+'</b><small>'+esc(pos)+' • '+esc(ov(p))+'</small><em>'+starsHtml(st)+'</em></div></div>';}return '<div class="mpPitchSlot" style="left:'+x+'%;top:'+y+'%"><b>'+esc(pos)+'</b></div>';}).join('')+'</div>';
+  };
+  window.mpDraftCardHtmlV33=function(c, readonly=false){
+    const click=readonly?'':' onclick="MP.pick(\''+esc(c.id)+'\')"'; const pos=mpNormPos(c.pos);
+    return '<div class="mpCardV33 '+(readonly?'readonly':'')+'"'+click+'><span class="tag '+esc(pos)+'">'+esc(pos)+'</span><div class="mpCardShadow"></div><div class="name">'+esc(nameShort(c.name))+'</div><div class="year">'+esc(c.club||'Histórico')+' • '+esc(c.year)+'</div></div>';
+  };
+  window.renderPickFeed=function(log){const items=(log||[]).slice().reverse();if(!items.length)return '<div class="mpFeedList"><p class="mpSub">Nenhum pick ainda.</p></div>';return '<div class="mpFeedList">'+items.map(l=>'<div class="mpFeedItem"><div class="mpFeedAvatar"></div><div><span>'+esc(l.club)+' escolheu</span><b>'+esc(nameShort(l.card.name))+'</b><em>'+esc(mpNormPos(l.card.assignedPos||l.card.pos))+' • '+esc(l.card.effectiveOvr||l.card.ovr||'')+'</em></div></div>').join('')+'</div>';};
+})();
+</script>
 
-</body>
-</html>
+<style id="v61-field-upright-fix">
+/* V61 - campo em pé, sem perspectiva lateral exagerada */
+#mpOverlay.v60View .mpDraftField.v60Portrait,
+#mpOverlay .mpDraftField.v60Portrait{
+  background:#03070d url('assets/pitch-portrait.png') center center / contain no-repeat !important;
+  height:calc(100vh - 148px)!important;
+  min-height:620px!important;
+  max-height:none!important;
+  border:0!important;
+  border-radius:14px!important;
+  box-shadow:inset 0 0 80px rgba(0,0,0,.42), 0 0 0 1px rgba(242,201,76,.16)!important;
+  overflow:visible!important;
+}
+#mpOverlay.v60View .mpDraftField.v60Portrait:before,
+#mpOverlay.v60View .mpDraftField.v60Portrait:after,
+#mpOverlay .mpDraftField.v60Portrait:before,
+#mpOverlay .mpDraftField.v60Portrait:after{display:none!important;}
+
+/* campo maior e mais central no layout */
+#mpOverlay.v60View .v60Shell{
+  grid-template-columns:220px 320px minmax(760px,1fr) 300px!important;
+  gap:10px!important;
+}
+#mpOverlay.v60View .mpDraftMain{min-width:0!important;overflow:visible!important;}
+
+/* cards do campo um pouco menores para caberem todos no gramado em pé */
+#mpOverlay.v60View .mpPitchSlot.filled.v60Card,
+#mpOverlay.v60View .mpPitchSlot.filled{
+  width:104px!important;
+  min-width:104px!important;
+  max-width:104px!important;
+  height:138px!important;
+  min-height:138px!important;
+  max-height:138px!important;
+  background:#050910 url('assets/card-field.svg') center/100% 100% no-repeat!important;
+  opacity:1!important;
+  filter:none!important;
+  box-shadow:0 18px 34px rgba(0,0,0,.68),0 0 18px rgba(242,201,76,.16)!important;
+}
+#mpOverlay.v60View .mpPitchSlot.filled.v60Card .mpMiniPortrait,
+#mpOverlay.v60View .mpPitchSlot.filled .mpMiniPortrait{
+  width:58px!important;height:58px!important;margin-top:22px!important;opacity:1!important;
+}
+#mpOverlay.v60View .mpPitchSlot.filled.v60Card b,
+#mpOverlay.v60View .mpPitchSlot.filled b{font-size:10.5px!important;line-height:1.03!important;max-width:90px!important;}
+#mpOverlay.v60View .mpPitchSlot.filled.v60Card small,
+#mpOverlay.v60View .mpPitchSlot.filled small{font-size:9px!important;margin-top:3px!important;}
+#mpOverlay.v60View .mpPitchSlot.filled.v60Card em,
+#mpOverlay.v60View .mpPitchSlot.filled em{font-size:9px!important;margin-top:2px!important;}
+
+/* etiquetas vazias menores, para não competir com os cards */
+#mpOverlay.v60View .mpPitchSlot:not(.filled){
+  width:56px!important;min-width:56px!important;height:24px!important;min-height:24px!important;
+  border-radius:8px!important;font-size:11px!important;box-shadow:0 8px 14px rgba(0,0,0,.55)!important;
+}
+#mpOverlay.v60View .mpPitchSlot:not(.filled) b{font-size:11px!important;}
+
+/* 5x2 permanece no lado esquerdo do campo */
+#mpOverlay.v60View .mpCardGridV60{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-rows:repeat(5,1fr)!important;
+}
+
+@media(max-width:1500px){
+  #mpOverlay.v60View .v60Shell{grid-template-columns:190px 285px minmax(660px,1fr) 250px!important;gap:7px!important;}
+  #mpOverlay.v60View .mpDraftField.v60Portrait{min-height:560px!important;height:calc(100vh - 142px)!important;}
+  #mpOverlay.v60View .mpPitchSlot.filled.v60Card,
+  #mpOverlay.v60View .mpPitchSlot.filled{width:88px!important;min-width:88px!important;height:118px!important;min-height:118px!important;}
+  #mpOverlay.v60View .mpPitchSlot.filled.v60Card .mpMiniPortrait,
+  #mpOverlay.v60View .mpPitchSlot.filled .mpMiniPortrait{width:48px!important;height:48px!important;margin-top:18px!important;}
+  #mpOverlay.v60View .mpPitchSlot.filled.v60Card b,
+  #mpOverlay.v60View .mpPitchSlot.filled b{font-size:9px!important;max-width:76px!important;}
+}
+</style>
